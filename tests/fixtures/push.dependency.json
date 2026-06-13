@@ -2,11 +2,11 @@
   "ref": "refs/heads/renovate/typescript-6.x",
   "before": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "after": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-  "compare": "https://github.com/DaisyCatTs/Gitracker/compare/aaaaaaa...bbbbbbb",
+  "compare": "https://github.com/DaisyCatTs/DaisyTracker/compare/aaaaaaa...bbbbbbb",
   "repository": {
-    "name": "Gitracker",
-    "full_name": "DaisyCatTs/Gitracker",
-    "html_url": "https://github.com/DaisyCatTs/Gitracker",
+    "name": "DaisyTracker",
+    "full_name": "DaisyCatTs/DaisyTracker",
+    "html_url": "https://github.com/DaisyCatTs/DaisyTracker",
     "default_branch": "master",
     "owner": {
       "login": "DaisyCatTs",
@@ -26,7 +26,7 @@
     "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "message": "chore(deps): update dependency typescript to v6",
     "timestamp": "2026-06-13T17:05:00Z",
-    "url": "https://github.com/DaisyCatTs/Gitracker/commit/bbbbbbb",
+    "url": "https://github.com/DaisyCatTs/DaisyTracker/commit/bbbbbbb",
     "author": {
       "name": "renovate[bot]",
       "email": "bot@example.com",
@@ -41,7 +41,7 @@
       "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "message": "chore(deps): update dependency typescript to v6",
       "timestamp": "2026-06-13T17:05:00Z",
-      "url": "https://github.com/DaisyCatTs/Gitracker/commit/bbbbbbb",
+      "url": "https://github.com/DaisyCatTs/DaisyTracker/commit/bbbbbbb",
       "author": {
         "name": "renovate[bot]",
         "email": "bot@example.com",

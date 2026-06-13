@@ -38,7 +38,7 @@ async function sendWithRetry(
       body: JSON.stringify(payload),
       headers: {
         "Content-Type": "application/json",
-        "User-Agent": "DaisyCatTs-Gitracker",
+        "User-Agent": "DaisyCatTs-DaisyTracker",
       },
       method: "POST",
     });

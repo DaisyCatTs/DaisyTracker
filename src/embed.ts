@@ -126,7 +126,7 @@ export function buildCompactDependencyPayload(
   const embed = normalizeEmbed({
     color: embedColor(config, language),
     description:
-      "A dependency automation update was detected. Gitracker is configured to avoid noisy full notifications for these updates.",
+      "A dependency automation update was detected. DaisyTracker is configured to avoid noisy full notifications for these updates.",
     fields: [
       inlineField("Repository", markdownLink(event.repository.fullName, event.repository.url)),
       inlineField("Ref", code(refLabel(event))),
@@ -188,7 +188,7 @@ function payload(embed: APIEmbed, config: ActionConfig): DiscordWebhookPayload {
     avatar_url: config.avatarUrl || undefined,
     embeds: [embed],
     thread_name: config.threadName || undefined,
-    username: truncate(config.username || "Gitracker", DISCORD_LIMITS.username),
+    username: truncate(config.username || "DaisyTracker", DISCORD_LIMITS.username),
   };
 }
 

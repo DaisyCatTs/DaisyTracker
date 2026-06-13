@@ -77,7 +77,7 @@ async function fetchCommitDetail(
       headers: {
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
-        "User-Agent": "DaisyCatTs-Gitracker",
+        "User-Agent": "DaisyCatTs-DaisyTracker",
         "X-GitHub-Api-Version": "2022-11-28",
       },
     },

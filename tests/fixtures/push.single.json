@@ -2,11 +2,11 @@
   "ref": "refs/heads/master",
   "before": "1111111111111111111111111111111111111111",
   "after": "2222222222222222222222222222222222222222",
-  "compare": "https://github.com/DaisyCatTs/Gitracker/compare/1111111...2222222",
+  "compare": "https://github.com/DaisyCatTs/DaisyTracker/compare/1111111...2222222",
   "repository": {
-    "name": "Gitracker",
-    "full_name": "DaisyCatTs/Gitracker",
-    "html_url": "https://github.com/DaisyCatTs/Gitracker",
+    "name": "DaisyTracker",
+    "full_name": "DaisyCatTs/DaisyTracker",
+    "html_url": "https://github.com/DaisyCatTs/DaisyTracker",
     "default_branch": "master",
     "owner": {
       "login": "DaisyCatTs",
@@ -26,7 +26,7 @@
     "id": "2222222222222222222222222222222222222222",
     "message": "feat: modernize Discord notification",
     "timestamp": "2026-06-13T17:00:00Z",
-    "url": "https://github.com/DaisyCatTs/Gitracker/commit/2222222",
+    "url": "https://github.com/DaisyCatTs/DaisyTracker/commit/2222222",
     "author": {
       "name": "Daisy",
       "email": "daisy@example.com",
@@ -41,7 +41,7 @@
       "id": "2222222222222222222222222222222222222222",
       "message": "feat: modernize Discord notification",
       "timestamp": "2026-06-13T17:00:00Z",
-      "url": "https://github.com/DaisyCatTs/Gitracker/commit/2222222",
+      "url": "https://github.com/DaisyCatTs/DaisyTracker/commit/2222222",
       "author": {
         "name": "Daisy",
         "email": "daisy@example.com",

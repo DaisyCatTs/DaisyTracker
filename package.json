@@ -1,5 +1,5 @@
 {
-  "name": "gitracker",
+  "name": "daisytracker",
   "version": "2.0.0",
   "description": "A minimal GitHub Action that sends polished GitHub push summaries to Discord.",
   "main": "dist/index.js",
@@ -26,12 +26,12 @@
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DaisyCatTs/Gitracker.git"
+    "url": "git+https://github.com/DaisyCatTs/DaisyTracker.git"
   },
   "bugs": {
-    "url": "https://github.com/DaisyCatTs/Gitracker/issues"
+    "url": "https://github.com/DaisyCatTs/DaisyTracker/issues"
   },
-  "homepage": "https://github.com/DaisyCatTs/Gitracker#readme",
+  "homepage": "https://github.com/DaisyCatTs/DaisyTracker#readme",
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
     "@types/node": "^25.9.3",

@@ -62,7 +62,7 @@ describe("GitHub commit detail fetching", () => {
       message: "feat: second",
       modified: [],
       removed: [],
-      url: "https://github.com/DaisyCatTs/Gitracker/commit/3333333",
+      url: "https://github.com/DaisyCatTs/DaisyTracker/commit/3333333",
     });
 
     let calls = 0;

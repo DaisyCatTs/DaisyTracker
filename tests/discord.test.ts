@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { sendDiscordPayloads } from "../src/discord";
 
 const payload = {
-  embeds: [{ description: "hello", title: "Gitracker" }],
+  embeds: [{ description: "hello", title: "DaisyTracker" }],
 };
 
 describe("Discord webhook sender", () => {

@@ -35,9 +35,9 @@ describe("GitHub push event normalization", () => {
       commits: [],
       ref: "refs/heads/main",
       repository: {
-        full_name: "DaisyCatTs/Gitracker",
-        html_url: "https://github.com/DaisyCatTs/Gitracker",
-        name: "Gitracker",
+        full_name: "DaisyCatTs/DaisyTracker",
+        html_url: "https://github.com/DaisyCatTs/DaisyTracker",
+        name: "DaisyTracker",
       },
     });
 

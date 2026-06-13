@@ -44,7 +44,7 @@ export function languageIconUrl(language: LanguageInfo): string | undefined {
     return undefined;
   }
 
-  return `https://raw.githubusercontent.com/DaisyCatTs/Gitracker/master/assets/languages/${language.icon}.png`;
+  return `https://raw.githubusercontent.com/DaisyCatTs/DaisyTracker/master/assets/languages/${language.icon}.png`;
 }
 
 function basename(file: string): string {

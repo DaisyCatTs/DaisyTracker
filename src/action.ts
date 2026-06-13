@@ -21,12 +21,12 @@ export async function run(
     const normalizedEventName = eventName.toLowerCase();
 
     if (!config.sendOnEvents.includes(normalizedEventName)) {
-      info(`Gitracker skipped event "${eventName}" because send-on-events does not include it.`);
+      info(`DaisyTracker skipped event "${eventName}" because send-on-events does not include it.`);
       return;
     }
 
     if (normalizedEventName !== "push") {
-      info(`Gitracker currently supports push events. Event "${eventName}" was skipped.`);
+      info(`DaisyTracker currently supports push events. Event "${eventName}" was skipped.`);
       return;
     }
 
@@ -43,7 +43,7 @@ export async function run(
 
     const event = await loadGitHubEvent(env);
     if (!isPushEvent(event)) {
-      info(`Gitracker currently supports push events. Event "${event.eventName}" was skipped.`);
+      info(`DaisyTracker currently supports push events. Event "${event.eventName}" was skipped.`);
       return;
     }
 
@@ -53,7 +53,7 @@ export async function run(
     });
 
     if (dependencyDecision.skip && config.dependencyUpdates === "silent") {
-      info(`Gitracker skipped dependency update noise: ${dependencyDecision.reason}.`);
+      info(`DaisyTracker skipped dependency update noise: ${dependencyDecision.reason}.`);
       return;
     }
 
@@ -66,7 +66,7 @@ export async function run(
           threadId: config.threadId,
         },
       );
-      info("Gitracker sent a compact dependency update summary.");
+      info("DaisyTracker sent a compact dependency update summary.");
       return;
     }
 
@@ -75,7 +75,7 @@ export async function run(
         fetch: fetchImpl,
         threadId: config.threadId,
       });
-      info("Gitracker sent a deleted ref summary.");
+      info("DaisyTracker sent a deleted ref summary.");
       return;
     }
 
@@ -90,7 +90,7 @@ export async function run(
       fetch: fetchImpl,
       threadId: config.threadId,
     });
-    info(`Gitracker sent ${payloads.length} Discord webhook payload(s).`);
+    info(`DaisyTracker sent ${payloads.length} Discord webhook payload(s).`);
   } catch (error) {
     if (shouldFailOnError(env)) {
       setFailed(error);

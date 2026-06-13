@@ -78,7 +78,7 @@ export async function loadGitHubEvent(env: Env = process.env): Promise<Normalize
 
   const eventPath = env.GITHUB_EVENT_PATH;
   if (!eventPath) {
-    throw new Error("Missing GITHUB_EVENT_PATH. Gitracker must run inside GitHub Actions.");
+    throw new Error("Missing GITHUB_EVENT_PATH. DaisyTracker must run inside GitHub Actions.");
   }
 
   const payload = JSON.parse(await readFile(eventPath, "utf8")) as PushPayload;

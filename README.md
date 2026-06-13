@@ -214,7 +214,7 @@ instead of failing the workflow.
 
 ## Migrating From Older Forks
 
-Older examples may use `snowypy/DaisyTracker@master` or `snowyjs/DaisyTracker@master` and
+Older examples may use `snowypy/Gitracker@master` or `snowyjs/Gitracker@master` and
 pass values through `env`. For this fork, use `DaisyCatTs/DaisyTracker@v2` and prefer the
 `discord-webhook-url` input shown above. The old `DISCORD_WEBHOOK_URL` environment
 fallback still works for compatibility.

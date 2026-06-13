@@ -31,7 +31,7 @@ export function defaultConfig(overrides: Partial<ActionConfig> = {}): ActionConf
     threadId: "",
     threadName: "",
     title: "",
-    username: "Gitracker",
+    username: "DaisyTracker",
     ...overrides,
   };
 }

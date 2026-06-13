@@ -19,7 +19,7 @@ inputs:
   username:
     description: "Discord webhook username override."
     required: false
-    default: "Gitracker"
+    default: "DaisyTracker"
   avatar-url:
     description: "Discord webhook avatar URL override."
     required: false

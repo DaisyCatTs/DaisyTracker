@@ -41,7 +41,7 @@ function readActionConfig(env = process.env) {
     threadId: getInput("thread-id", env),
     threadName: getInput("thread-name", env),
     title: getInput("title", env),
-    username: getInput("username", env) || "Gitracker"
+    username: getInput("username", env) || "DaisyTracker"
   };
 }
 function getInput(name, env = process.env) {
@@ -254,7 +254,7 @@ async function sendWithRetry(webhookUrl, payload2, options) {
       body: JSON.stringify(payload2),
       headers: {
         "Content-Type": "application/json",
-        "User-Agent": "DaisyCatTs-Gitracker"
+        "User-Agent": "DaisyCatTs-DaisyTracker"
       },
       method: "POST"
     });
@@ -475,7 +475,7 @@ function languageIconUrl(language) {
   if (!language.icon) {
     return void 0;
   }
-  return `https://raw.githubusercontent.com/DaisyCatTs/Gitracker/master/assets/languages/${language.icon}.png`;
+  return `https://raw.githubusercontent.com/DaisyCatTs/DaisyTracker/master/assets/languages/${language.icon}.png`;
 }
 function basename(file) {
   return file.split(/[\\/]/).pop() || file;
@@ -567,7 +567,7 @@ function buildCompactDependencyPayload(event, config, reason) {
   const language = detectDominantLanguage(event.commits.flatMap(commitFileNames));
   const embed = normalizeEmbed({
     color: embedColor(config, language),
-    description: "A dependency automation update was detected. Gitracker is configured to avoid noisy full notifications for these updates.",
+    description: "A dependency automation update was detected. DaisyTracker is configured to avoid noisy full notifications for these updates.",
     fields: [
       inlineField("Repository", markdownLink(event.repository.fullName, event.repository.url)),
       inlineField("Ref", code(refLabel(event))),
@@ -620,7 +620,7 @@ function payload(embed, config) {
     avatar_url: config.avatarUrl || void 0,
     embeds: [embed],
     thread_name: config.threadName || void 0,
-    username: truncate(config.username || "Gitracker", DISCORD_LIMITS.username)
+    username: truncate(config.username || "DaisyTracker", DISCORD_LIMITS.username)
   };
 }
 function aggregateChanges(details) {
@@ -882,7 +882,7 @@ async function loadGitHubEvent(env = process.env) {
   }
   const eventPath = env.GITHUB_EVENT_PATH;
   if (!eventPath) {
-    throw new Error("Missing GITHUB_EVENT_PATH. Gitracker must run inside GitHub Actions.");
+    throw new Error("Missing GITHUB_EVENT_PATH. DaisyTracker must run inside GitHub Actions.");
   }
   const payload2 = JSON.parse(await (0, import_promises.readFile)(eventPath, "utf8"));
   return normalizePushPayload(payload2, env);
@@ -1013,7 +1013,7 @@ async function fetchCommitDetail(event, commit, token, fetchImpl) {
       headers: {
         Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
-        "User-Agent": "DaisyCatTs-Gitracker",
+        "User-Agent": "DaisyCatTs-DaisyTracker",
         "X-GitHub-Api-Version": "2022-11-28"
       }
     }
@@ -1069,11 +1069,11 @@ async function run(env = process.env, fetchImpl = globalThis.fetch) {
     const eventName = env.GITHUB_EVENT_NAME || "push";
     const normalizedEventName = eventName.toLowerCase();
     if (!config.sendOnEvents.includes(normalizedEventName)) {
-      info(`Gitracker skipped event "${eventName}" because send-on-events does not include it.`);
+      info(`DaisyTracker skipped event "${eventName}" because send-on-events does not include it.`);
       return;
     }
     if (normalizedEventName !== "push") {
-      info(`Gitracker currently supports push events. Event "${eventName}" was skipped.`);
+      info(`DaisyTracker currently supports push events. Event "${eventName}" was skipped.`);
       return;
     }
     if (!config.discordWebhookUrl) {
@@ -1087,7 +1087,7 @@ async function run(env = process.env, fetchImpl = globalThis.fetch) {
     }
     const event = await loadGitHubEvent(env);
     if (!isPushEvent(event)) {
-      info(`Gitracker currently supports push events. Event "${event.eventName}" was skipped.`);
+      info(`DaisyTracker currently supports push events. Event "${event.eventName}" was skipped.`);
       return;
     }
     const dependencyDecision = shouldSkipDependencyUpdate(event, {
@@ -1095,7 +1095,7 @@ async function run(env = process.env, fetchImpl = globalThis.fetch) {
       ignoredBranches: config.ignoredBranches
     });
     if (dependencyDecision.skip && config.dependencyUpdates === "silent") {
-      info(`Gitracker skipped dependency update noise: ${dependencyDecision.reason}.`);
+      info(`DaisyTracker skipped dependency update noise: ${dependencyDecision.reason}.`);
       return;
     }
     if (dependencyDecision.skip && config.dependencyUpdates === "compact") {
@@ -1107,7 +1107,7 @@ async function run(env = process.env, fetchImpl = globalThis.fetch) {
           threadId: config.threadId
         }
       );
-      info("Gitracker sent a compact dependency update summary.");
+      info("DaisyTracker sent a compact dependency update summary.");
       return;
     }
     if (event.deleted) {
@@ -1115,7 +1115,7 @@ async function run(env = process.env, fetchImpl = globalThis.fetch) {
         fetch: fetchImpl,
         threadId: config.threadId
       });
-      info("Gitracker sent a deleted ref summary.");
+      info("DaisyTracker sent a deleted ref summary.");
       return;
     }
     const details = await fetchCommitDetails(event, {
@@ -1128,7 +1128,7 @@ async function run(env = process.env, fetchImpl = globalThis.fetch) {
       fetch: fetchImpl,
       threadId: config.threadId
     });
-    info(`Gitracker sent ${payloads.length} Discord webhook payload(s).`);
+    info(`DaisyTracker sent ${payloads.length} Discord webhook payload(s).`);
   } catch (error2) {
     if (shouldFailOnError(env)) {
       setFailed(error2);
