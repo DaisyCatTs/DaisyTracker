@@ -1,0 +1,55 @@
+{
+  "ref": "refs/heads/renovate/typescript-6.x",
+  "before": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "after": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "compare": "https://github.com/DaisyCatTs/Gitracker/compare/aaaaaaa...bbbbbbb",
+  "repository": {
+    "name": "Gitracker",
+    "full_name": "DaisyCatTs/Gitracker",
+    "html_url": "https://github.com/DaisyCatTs/Gitracker",
+    "default_branch": "master",
+    "owner": {
+      "login": "DaisyCatTs",
+      "avatar_url": "https://github.com/DaisyCatTs.png"
+    }
+  },
+  "pusher": {
+    "name": "renovate[bot]",
+    "email": "bot@example.com"
+  },
+  "sender": {
+    "login": "renovate[bot]",
+    "html_url": "https://github.com/apps/renovate",
+    "avatar_url": "https://github.com/renovatebot.png"
+  },
+  "head_commit": {
+    "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "message": "chore(deps): update dependency typescript to v6",
+    "timestamp": "2026-06-13T17:05:00Z",
+    "url": "https://github.com/DaisyCatTs/Gitracker/commit/bbbbbbb",
+    "author": {
+      "name": "renovate[bot]",
+      "email": "bot@example.com",
+      "username": "renovate[bot]"
+    },
+    "added": [],
+    "modified": ["bun.lock", "package.json"],
+    "removed": []
+  },
+  "commits": [
+    {
+      "id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "message": "chore(deps): update dependency typescript to v6",
+      "timestamp": "2026-06-13T17:05:00Z",
+      "url": "https://github.com/DaisyCatTs/Gitracker/commit/bbbbbbb",
+      "author": {
+        "name": "renovate[bot]",
+        "email": "bot@example.com",
+        "username": "renovate[bot]"
+      },
+      "added": [],
+      "modified": ["bun.lock", "package.json"],
+      "removed": []
+    }
+  ]
+}

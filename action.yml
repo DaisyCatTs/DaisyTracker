@@ -1,10 +1,70 @@
-name: "Push via Gitracker"
-description: "A GitHub Action to send commit log to Discord."
+name: "Gitracker"
+description: "Send polished GitHub push summaries to Discord with dependency-bot noise control."
 author: "DaisyCat"
 
+inputs:
+  discord-webhook-url:
+    description: "Discord webhook URL. Falls back to DISCORD_WEBHOOK_URL."
+    required: false
+  github-token:
+    description: "Optional GitHub token for fetching line-change stats on private repositories. Falls back to GITHUB_TOKEN."
+    required: false
+  title:
+    description: "Optional Discord embed title."
+    required: false
+  color:
+    description: "Embed color as auto, a hex string such as #1abc9c, 0x1abc9c, or a decimal Discord color."
+    required: false
+    default: "auto"
+  username:
+    description: "Discord webhook username override."
+    required: false
+    default: "Gitracker"
+  avatar-url:
+    description: "Discord webhook avatar URL override."
+    required: false
+  thread-id:
+    description: "Optional Discord thread ID to send the notification into."
+    required: false
+  thread-name:
+    description: "Optional thread name to create when the webhook belongs to a forum or media channel."
+    required: false
+  fail-on-error:
+    description: "Whether Discord or GitHub API errors should fail the workflow."
+    required: false
+    default: "true"
+  suppress-mentions:
+    description: "Whether to suppress user, role, everyone, and here mentions in Discord messages."
+    required: false
+    default: "true"
+  dependency-updates:
+    description: "How to handle Renovate, Dependabot, and other dependency bot updates: silent, compact, or full."
+    required: false
+    default: "silent"
+  ignored-actors:
+    description: "Comma-separated actor names skipped when dependency-updates is silent."
+    required: false
+    default: "dependabot[bot],renovate[bot],github-actions[bot]"
+  ignored-branches:
+    description: "Comma-separated branch glob patterns skipped when dependency-updates is silent."
+    required: false
+    default: "renovate/**,dependabot/**"
+  max-commits:
+    description: "Maximum commits to show in the Discord embed."
+    required: false
+    default: "10"
+  max-files-per-section:
+    description: "Maximum files to show in each added, modified, and removed section."
+    required: false
+    default: "10"
+  send-on-events:
+    description: "Comma-separated GitHub event names to send. Currently push is supported."
+    required: false
+    default: "push"
+
 runs:
-  using: node20
-  main: "bot.js"
+  using: "node24"
+  main: "dist/index.js"
 
 branding:
   icon: "zap"

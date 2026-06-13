@@ -1,0 +1,55 @@
+{
+  "ref": "refs/heads/master",
+  "before": "1111111111111111111111111111111111111111",
+  "after": "2222222222222222222222222222222222222222",
+  "compare": "https://github.com/DaisyCatTs/Gitracker/compare/1111111...2222222",
+  "repository": {
+    "name": "Gitracker",
+    "full_name": "DaisyCatTs/Gitracker",
+    "html_url": "https://github.com/DaisyCatTs/Gitracker",
+    "default_branch": "master",
+    "owner": {
+      "login": "DaisyCatTs",
+      "avatar_url": "https://github.com/DaisyCatTs.png"
+    }
+  },
+  "pusher": {
+    "name": "DaisyCatTs",
+    "email": "daisy@example.com"
+  },
+  "sender": {
+    "login": "DaisyCatTs",
+    "html_url": "https://github.com/DaisyCatTs",
+    "avatar_url": "https://github.com/DaisyCatTs.png"
+  },
+  "head_commit": {
+    "id": "2222222222222222222222222222222222222222",
+    "message": "feat: modernize Discord notification",
+    "timestamp": "2026-06-13T17:00:00Z",
+    "url": "https://github.com/DaisyCatTs/Gitracker/commit/2222222",
+    "author": {
+      "name": "Daisy",
+      "email": "daisy@example.com",
+      "username": "DaisyCatTs"
+    },
+    "added": ["src/index.ts"],
+    "modified": ["README.md", "package.json"],
+    "removed": []
+  },
+  "commits": [
+    {
+      "id": "2222222222222222222222222222222222222222",
+      "message": "feat: modernize Discord notification",
+      "timestamp": "2026-06-13T17:00:00Z",
+      "url": "https://github.com/DaisyCatTs/Gitracker/commit/2222222",
+      "author": {
+        "name": "Daisy",
+        "email": "daisy@example.com",
+        "username": "DaisyCatTs"
+      },
+      "added": ["src/index.ts"],
+      "modified": ["README.md", "package.json"],
+      "removed": []
+    }
+  ]
+}
