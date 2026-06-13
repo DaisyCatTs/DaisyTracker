@@ -1,6 +1,6 @@
-# Gitracker
+# DaisyTracker
 
-Gitracker is a minimal GitHub Action that sends polished push summaries to Discord.
+DaisyTracker is a minimal GitHub Action that sends polished push summaries to Discord.
 It is built for the normal workflow: add one Discord webhook secret, add one Action
 step, and get useful commit updates without Renovate or Dependabot spam.
 
@@ -9,7 +9,7 @@ step, and get useful commit updates without Renovate or Dependabot spam.
 Create a repository secret named `DISCORD_WEBHOOK_URL`, then add:
 
 ```yaml
-name: Gitracker
+name: DaisyTracker
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: DaisyCatTs/Gitracker@v2
+      - uses: DaisyCatTs/DaisyTracker@v2
         with:
           discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
 ```
@@ -33,7 +33,7 @@ extra Discord application is required.
 
 ## What It Sends
 
-Gitracker sends a compact Discord dashboard for push events:
+DaisyTracker sends a compact Discord dashboard for push events:
 
 - repository and branch
 - branch and tag creation/deletion summaries
@@ -50,7 +50,7 @@ the 6000 character total embed limit.
 
 ## Language Support
 
-Gitracker detects the dominant changed language from GitHub Linguist-style file
+DaisyTracker detects the dominant changed language from GitHub Linguist-style file
 extensions and common filenames. Supported detection includes TypeScript, JavaScript,
 Python, Java, C#, C++, Go, Rust, Ruby, PHP, HTML, CSS, Markdown, Swift, Kotlin, Lua,
 Shell, Dockerfile, YAML, JSON, Terraform, Svelte, Vue, Astro, Elixir, Erlang,
@@ -58,13 +58,13 @@ Haskell, Julia, Nix, PowerShell, SQL, Zig, and more.
 
 The embed color follows the detected language when `color` is `auto`. Local PNG icons
 are included for the languages that have curated assets in `assets/languages`. If a
-detected language does not have a curated icon, Gitracker still uses the language
+detected language does not have a curated icon, DaisyTracker still uses the language
 color and falls back to the repository avatar instead of sending a broken image.
 
 ## Dependency Update Noise
 
 Dependency automation can be noisy because Renovate and Dependabot push branches just
-like humans do. Gitracker skips these updates by default.
+like humans do. DaisyTracker skips these updates by default.
 
 Default ignored actors:
 
@@ -81,7 +81,7 @@ renovate/**,dependabot/**
 To send one small summary instead of silence:
 
 ```yaml
-- uses: DaisyCatTs/Gitracker@v2
+- uses: DaisyCatTs/DaisyTracker@v2
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     dependency-updates: compact
@@ -90,7 +90,7 @@ To send one small summary instead of silence:
 To send dependency updates like any other push:
 
 ```yaml
-- uses: DaisyCatTs/Gitracker@v2
+- uses: DaisyCatTs/DaisyTracker@v2
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     dependency-updates: full
@@ -110,7 +110,7 @@ if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
 | `github-token` | `GITHUB_TOKEN` env | Optional token for fetching line-change stats, especially in private repos. |
 | `title` | event-specific title | Custom embed title. |
 | `color` | `auto` | Embed color as `auto`, `#rrggbb`, `0xrrggbb`, or decimal. `auto` uses the dominant changed language. |
-| `username` | `Gitracker` | Discord webhook username override. |
+| `username` | `DaisyTracker` | Discord webhook username override. |
 | `avatar-url` | empty | Discord webhook avatar URL override. |
 | `thread-id` | empty | Existing Discord thread ID to send into. |
 | `thread-name` | empty | Thread name to create when the webhook belongs to a forum or media channel. |
@@ -129,7 +129,7 @@ The minimal setup works without a GitHub token input. If you want reliable line-
 stats for private repositories, pass the built-in token:
 
 ```yaml
-- uses: DaisyCatTs/Gitracker@v2
+- uses: DaisyCatTs/DaisyTracker@v2
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     github-token: ${{ github.token }}
@@ -140,7 +140,7 @@ stats for private repositories, pass the built-in token:
 Send into an existing thread:
 
 ```yaml
-- uses: DaisyCatTs/Gitracker@v2
+- uses: DaisyCatTs/DaisyTracker@v2
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     thread-id: "123456789012345678"
@@ -149,7 +149,7 @@ Send into an existing thread:
 Create a thread in a forum or media channel webhook:
 
 ```yaml
-- uses: DaisyCatTs/Gitracker@v2
+- uses: DaisyCatTs/DaisyTracker@v2
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     thread-name: "deploys"
@@ -161,7 +161,7 @@ By default, webhook delivery errors fail the workflow after retries. For reposit
 where Discord notifications should never block CI, set:
 
 ```yaml
-- uses: DaisyCatTs/Gitracker@v2
+- uses: DaisyCatTs/DaisyTracker@v2
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     fail-on-error: false
@@ -199,27 +199,27 @@ Set the `discord-webhook-url` input or the `DISCORD_WEBHOOK_URL` environment var
 `Discord webhook request failed with 400`
 
 The webhook URL is valid, but Discord rejected the payload. Open an issue with the
-workflow event shape if this happens; Gitracker validates known embed limits before
+workflow event shape if this happens; DaisyTracker validates known embed limits before
 sending.
 
 `Discord webhook request failed with 429`
 
-Discord rate-limited the webhook. Gitracker retries 429 responses automatically, but
+Discord rate-limited the webhook. DaisyTracker retries 429 responses automatically, but
 very busy repositories may still need fewer notification triggers.
 
 Unsupported events
 
-Gitracker currently sends push events. Unsupported events are skipped successfully
+DaisyTracker currently sends push events. Unsupported events are skipped successfully
 instead of failing the workflow.
 
 ## Migrating From Older Forks
 
-Older examples may use `snowypy/Gitracker@master` or `snowyjs/Gitracker@master` and
-pass values through `env`. For this fork, use `DaisyCatTs/Gitracker@v2` and prefer the
+Older examples may use `snowypy/DaisyTracker@master` or `snowyjs/DaisyTracker@master` and
+pass values through `env`. For this fork, use `DaisyCatTs/DaisyTracker@v2` and prefer the
 `discord-webhook-url` input shown above. The old `DISCORD_WEBHOOK_URL` environment
 fallback still works for compatibility.
 
 ## License
 
-Gitracker is licensed under `GPL-3.0-only`. The SPDX value in `package.json` matches
+DaisyTracker is licensed under `GPL-3.0-only`. The SPDX value in `package.json` matches
 the full license text in `LICENSE`.
