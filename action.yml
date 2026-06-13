@@ -1,4 +1,4 @@
-name: "Gitracker"
+name: "DaisyTracker"
 description: "Send polished GitHub push summaries to Discord with dependency-bot noise control."
 author: "DaisyCat"
 
