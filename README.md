@@ -48,6 +48,19 @@ Gitracker sends a compact Discord dashboard for push events:
 Discord limits are enforced before sending, including field length, field count, and
 the 6000 character total embed limit.
 
+## Language Support
+
+Gitracker detects the dominant changed language from GitHub Linguist-style file
+extensions and common filenames. Supported detection includes TypeScript, JavaScript,
+Python, Java, C#, C++, Go, Rust, Ruby, PHP, HTML, CSS, Markdown, Swift, Kotlin, Lua,
+Shell, Dockerfile, YAML, JSON, Terraform, Svelte, Vue, Astro, Elixir, Erlang,
+Haskell, Julia, Nix, PowerShell, SQL, Zig, and more.
+
+The embed color follows the detected language when `color` is `auto`. Local PNG icons
+are included for the languages that have curated assets in `assets/languages`. If a
+detected language does not have a curated icon, Gitracker still uses the language
+color and falls back to the repository avatar instead of sending a broken image.
+
 ## Dependency Update Noise
 
 Dependency automation can be noisy because Renovate and Dependabot push branches just
@@ -160,7 +173,7 @@ This repo uses TypeScript and Bun.
 
 ```bash
 bun install
-bun test
+bun run check
 bun run build
 ```
 
@@ -173,6 +186,9 @@ bun run preview tests/fixtures/push.single.json
 The source is split by responsibility under `src/`. The generated Action bundle is
 `dist/index.js` and is committed so users do not need to install dependencies when the
 Action runs.
+
+`node_modules` is intentionally not committed. The only runtime file required by the
+GitHub Action is the generated `dist/index.js` bundle.
 
 ## Troubleshooting
 
@@ -202,3 +218,8 @@ Older examples may use `snowypy/Gitracker@master` or `snowyjs/Gitracker@master` 
 pass values through `env`. For this fork, use `DaisyCatTs/Gitracker@v2` and prefer the
 `discord-webhook-url` input shown above. The old `DISCORD_WEBHOOK_URL` environment
 fallback still works for compatibility.
+
+## License
+
+Gitracker is licensed under `GPL-3.0-only`. The SPDX value in `package.json` matches
+the full license text in `LICENSE`.

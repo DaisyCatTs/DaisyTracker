@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { LANGUAGE_BY_EXTENSION, LANGUAGE_BY_FILENAME } from "../src/language-data";
 import { detectDominantLanguage, detectLanguage, languageIconUrl } from "../src/languages";
 
 describe("language detection", () => {
@@ -22,5 +25,21 @@ describe("language detection", () => {
 
     expect(language.name).toBe("TypeScript");
     expect(languageIconUrl(language)).toContain("typescript.png");
+  });
+
+  test("keeps curated language icon references in sync with PNG assets", async () => {
+    const assetNames = (await readdir(join(import.meta.dir, "..", "assets", "languages")))
+      .filter((name) => name.endsWith(".png"))
+      .map((name) => name.replace(/\.png$/, ""))
+      .sort();
+    const iconNames = [
+      ...Object.values(LANGUAGE_BY_EXTENSION),
+      ...Object.values(LANGUAGE_BY_FILENAME),
+    ]
+      .map((language) => language.icon)
+      .filter((icon): icon is string => Boolean(icon));
+    const referencedIcons = [...new Set(iconNames)].sort();
+
+    expect(referencedIcons).toEqual(assetNames);
   });
 });

@@ -24,6 +24,14 @@
   ],
   "author": "DaisyCat",
   "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DaisyCatTs/Gitracker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/DaisyCatTs/Gitracker/issues"
+  },
+  "homepage": "https://github.com/DaisyCatTs/Gitracker#readme",
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
     "@types/node": "^25.9.3",
