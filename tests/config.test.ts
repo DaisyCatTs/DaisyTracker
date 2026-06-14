@@ -41,6 +41,10 @@ describe("Action config", () => {
     expect(config.githubToken).toBe("github-token");
   });
 
+  test("does not override the Discord webhook username by default", () => {
+    expect(readActionConfig({}).username).toBe("");
+  });
+
   test("ignores unevaluated github.token metadata expressions outside Actions", () => {
     const config = readActionConfig({
       INPUT_GITHUB_TOKEN: GITHUB_TOKEN_EXPRESSION,

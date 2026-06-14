@@ -29,7 +29,8 @@ describe("repository metadata", () => {
     expect(metadata["max-messages"]?.default).toBe(String(config.maxMessages));
     expect(metadata["send-on-events"]?.default).toBe(config.sendOnEvents.join(","));
     expect(metadata["suppress-mentions"]?.default).toBe(String(config.suppressMentions));
-    expect(metadata.username?.default).toBe(config.username);
+    expect(metadata.username?.default).toBeUndefined();
+    expect(config.username).toBe("");
   });
 });
 

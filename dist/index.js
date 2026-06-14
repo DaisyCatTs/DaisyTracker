@@ -43,7 +43,7 @@ function readActionConfig(env = process.env) {
     threadId: getInput("thread-id", env),
     threadName: getInput("thread-name", env),
     title: getInput("title", env),
-    username: getInput("username", env) || "DaisyTracker"
+    username: getInput("username", env)
   };
 }
 function getInput(name, env = process.env) {
@@ -2545,7 +2545,7 @@ function payload(embed, config) {
     avatar_url: config.avatarUrl || void 0,
     embeds: [embed],
     thread_name: config.threadName || void 0,
-    username: truncate(config.username || "DaisyTracker", DISCORD_LIMITS.username)
+    username: config.username ? truncate(config.username, DISCORD_LIMITS.username) : void 0
   };
 }
 function enrichmentFromDetails(details) {

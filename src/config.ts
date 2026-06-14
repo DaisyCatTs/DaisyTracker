@@ -28,7 +28,7 @@ export function readActionConfig(env: Env = process.env): ActionConfig {
     threadId: getInput("thread-id", env),
     threadName: getInput("thread-name", env),
     title: getInput("title", env),
-    username: getInput("username", env) || "DaisyTracker",
+    username: getInput("username", env),
   };
 }
 

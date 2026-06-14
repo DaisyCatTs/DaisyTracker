@@ -189,7 +189,7 @@ function payload(embed: APIEmbed, config: ActionConfig): DiscordWebhookPayload {
     avatar_url: config.avatarUrl || undefined,
     embeds: [embed],
     thread_name: config.threadName || undefined,
-    username: truncate(config.username || "DaisyTracker", DISCORD_LIMITS.username),
+    username: config.username ? truncate(config.username, DISCORD_LIMITS.username) : undefined,
   };
 }
 

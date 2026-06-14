@@ -41,6 +41,7 @@ describe("Discord embed payloads", () => {
       throw new Error("Expected first payload.");
     }
     expect(firstPayload.allowed_mentions).toEqual({ parse: [] });
+    expect(firstPayload.username).toBeUndefined();
     expect(embedTextLength(firstPayload)).toBeLessThanOrEqual(6000);
     expect(firstPayload?.embeds[0]?.fields?.length).toBeLessThanOrEqual(25);
   });

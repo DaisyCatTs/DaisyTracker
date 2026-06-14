@@ -33,7 +33,8 @@ jobs:
 That is the recommended setup. No bot token, hosted server, dashboard, database, or
 extra Discord application is required. Keep `contents: read`; DaisyTracker uses the
 default `${{ github.token }}` to enrich file, language, rename, and line-change details
-for private repositories.
+for private repositories. Discord uses the webhook's configured name and avatar unless
+you set the optional `username` or `avatar-url` inputs.
 
 ## Install Channel
 
@@ -68,6 +69,23 @@ The older env-style setup also still works:
 The `with:` form is preferred for new workflows because it makes the Discord webhook
 input explicit. You do not need to create a GitHub token secret; GitHub provides
 `GITHUB_TOKEN` automatically for each workflow run.
+
+## Webhook Name And Avatar
+
+DaisyTracker does not override the Discord webhook name by default. Name each webhook
+in Discord however you want, such as `Sculk Gens`, `Website Deploys`, or `Backend
+Pushes`, and DaisyTracker will use that configured name.
+
+Only set these inputs when you intentionally want a workflow-level override:
+
+```yaml
+- name: Push via DaisyTracker
+  uses: DaisyCatTs/DaisyTracker@master
+  with:
+    discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+    username: Sculk Gens
+    avatar-url: https://example.com/sculk-gens.png
+```
 
 ## Private Repositories
 
@@ -142,8 +160,7 @@ Local preview renders the same JSON payload shape that the Action sends to Disco
           { "name": "Language", "value": "TypeScript", "inline": true }
         ]
       }
-    ],
-    "username": "DaisyTracker"
+    ]
   }
 ]
 ```
@@ -214,8 +231,8 @@ if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
 | `github-token` | `${{ github.token }}` | Token for private repository file, language, rename, and line-change enrichment. |
 | `title` | event-specific title | Custom embed title. |
 | `color` | `auto` | Embed color as `auto`, `#rrggbb`, `0xrrggbb`, or decimal. `auto` uses the dominant changed language. |
-| `username` | `DaisyTracker` | Discord webhook username override. |
-| `avatar-url` | empty | Discord webhook avatar URL override. |
+| `username` | webhook default | Discord webhook username override. Omit to use the webhook's configured Discord name. |
+| `avatar-url` | webhook default | Discord webhook avatar URL override. Omit to use the webhook's configured Discord avatar. |
 | `thread-id` | empty | Existing Discord thread ID to send into. |
 | `thread-name` | empty | Thread name to create when the webhook belongs to a forum or media channel. |
 | `fail-on-error` | `true` | Whether Discord or GitHub API errors fail the workflow. Set to `false` to warn only. |
