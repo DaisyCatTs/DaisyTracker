@@ -6,7 +6,8 @@ step, and get useful commit updates without Renovate or Dependabot spam.
 
 ## Quick Start
 
-Create a repository secret named `DISCORD_WEBHOOK_URL`, then add:
+Create a repository secret named `DISCORD_WEBHOOK_URL`, then add this workflow.
+This uses `@master`, so every run uses the latest pushed DaisyTracker build:
 
 ```yaml
 name: DaisyTracker
@@ -23,7 +24,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: DaisyCatTs/DaisyTracker@v2
+      - name: Push via DaisyTracker
+        uses: DaisyCatTs/DaisyTracker@master
         with:
           discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
 ```
@@ -32,6 +34,40 @@ That is the recommended setup. No bot token, hosted server, dashboard, database,
 extra Discord application is required. Keep `contents: read`; DaisyTracker uses the
 default `${{ github.token }}` to enrich file, language, rename, and line-change details
 for private repositories.
+
+## Install Channel
+
+Use `@master` when you want DaisyTracker to stay updated automatically:
+
+```yaml
+- name: Push via DaisyTracker
+  uses: DaisyCatTs/DaisyTracker@master
+  with:
+    discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+```
+
+Use `@v2` when you want the latest stable v2 tag instead:
+
+```yaml
+- name: Push via DaisyTracker
+  uses: DaisyCatTs/DaisyTracker@v2
+  with:
+    discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+```
+
+The older env-style setup also still works:
+
+```yaml
+- name: Push via DaisyTracker
+  uses: DaisyCatTs/DaisyTracker@master
+  env:
+    DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+The `with:` form is preferred for new workflows because it makes the Discord webhook
+input explicit. You do not need to create a GitHub token secret; GitHub provides
+`GITHUB_TOKEN` automatically for each workflow run.
 
 ## What It Sends
 
@@ -120,7 +156,7 @@ renovate/**,dependabot/**
 To send one small summary instead of silence:
 
 ```yaml
-- uses: DaisyCatTs/DaisyTracker@v2
+- uses: DaisyCatTs/DaisyTracker@master
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     dependency-updates: compact
@@ -129,7 +165,7 @@ To send one small summary instead of silence:
 To send dependency updates like any other push:
 
 ```yaml
-- uses: DaisyCatTs/DaisyTracker@v2
+- uses: DaisyCatTs/DaisyTracker@master
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     dependency-updates: full
@@ -179,7 +215,7 @@ compare APIs if the push payload does not include changed-file details.
 Override `github-token` only when you want to use a PAT or a GitHub App token:
 
 ```yaml
-- uses: DaisyCatTs/DaisyTracker@v2
+- uses: DaisyCatTs/DaisyTracker@master
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     github-token: ${{ secrets.MY_GITHUB_TOKEN }}
@@ -190,7 +226,7 @@ Override `github-token` only when you want to use a PAT or a GitHub App token:
 Send into an existing thread:
 
 ```yaml
-- uses: DaisyCatTs/DaisyTracker@v2
+- uses: DaisyCatTs/DaisyTracker@master
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     thread-id: "123456789012345678"
@@ -199,7 +235,7 @@ Send into an existing thread:
 Create a thread in a forum or media channel webhook:
 
 ```yaml
-- uses: DaisyCatTs/DaisyTracker@v2
+- uses: DaisyCatTs/DaisyTracker@master
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     thread-name: "deploys"
@@ -211,7 +247,7 @@ By default, webhook delivery errors fail the workflow after retries. For reposit
 where Discord notification delivery should never block CI, set:
 
 ```yaml
-- uses: DaisyCatTs/DaisyTracker@v2
+- uses: DaisyCatTs/DaisyTracker@master
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
     fail-on-error: false
@@ -270,9 +306,11 @@ instead of failing the workflow.
 ## Migrating From Older Forks
 
 Older examples may use `snowypy/Gitracker@master` or `snowyjs/Gitracker@master` and
-pass values through `env`. For this fork, use `DaisyCatTs/DaisyTracker@v2` and prefer the
-`discord-webhook-url` input shown above. The old `DISCORD_WEBHOOK_URL` environment
-fallback still works for compatibility.
+pass values through `env`. For this fork, use `DaisyCatTs/DaisyTracker@master` if you
+want automatic updates, or `DaisyCatTs/DaisyTracker@v2` if you want the stable v2 tag.
+Prefer the `discord-webhook-url` input shown above for new workflows. The old
+`DISCORD_WEBHOOK_URL` and `GITHUB_TOKEN` environment fallbacks still work for
+compatibility.
 
 ## License
 
