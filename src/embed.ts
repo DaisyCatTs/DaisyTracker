@@ -34,7 +34,9 @@ export function buildPushPayloads(
     ...changes.removed,
   ]);
   const latestCommit = event.headCommit || event.commits.at(-1);
-  const thumbnailUrl = languageIconUrl(language) || event.repository.avatarUrl;
+  const thumbnailUrl = enrichment.fileDetailsUnavailable
+    ? event.repository.avatarUrl
+    : languageIconUrl(language) || event.repository.avatarUrl;
   const color = embedColor(config, language);
   const notes = eventNotes(event, enrichment);
 
@@ -52,7 +54,7 @@ export function buildPushPayloads(
       inlineField("Commits", commitCountLabel(event)),
       inlineField("Files", fileCountLabel(enrichment)),
       inlineField("Lines", lineSummary(enrichment.stats)),
-      inlineField("Language", language.name),
+      inlineField("Language", languageLabel(language, enrichment)),
       {
         inline: false,
         name: `Recent commits (${Math.min(event.commits.length, config.maxCommits)})`,
@@ -449,7 +451,15 @@ function commitFileNames(commit: NormalizedCommit): string[] {
 }
 
 function fileCountLabel(enrichment: PushEnrichment): string {
+  if (enrichment.fileDetailsUnavailable) {
+    return "Unavailable";
+  }
+
   return enrichment.fileCountCapped ? `${enrichment.fileCount}+` : String(enrichment.fileCount);
+}
+
+function languageLabel(language: LanguageInfo, enrichment: PushEnrichment): string {
+  return enrichment.fileDetailsUnavailable ? "Unavailable" : language.name;
 }
 
 function finalizeEmbed(embed: APIEmbed): APIEmbed {

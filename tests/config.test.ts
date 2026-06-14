@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { getInput, parseColor, readActionConfig } from "../src/action";
 
+const GITHUB_TOKEN_EXPRESSION = "$" + "{{ github.token }}";
+
 describe("Action config", () => {
   test("reads new v2 inputs", () => {
     const config = readActionConfig({
@@ -36,6 +38,23 @@ describe("Action config", () => {
     });
 
     expect(config.discordWebhookUrl).toBe("https://discord.com/api/webhooks/123/token");
+    expect(config.githubToken).toBe("github-token");
+  });
+
+  test("ignores unevaluated github.token metadata expressions outside Actions", () => {
+    const config = readActionConfig({
+      INPUT_GITHUB_TOKEN: GITHUB_TOKEN_EXPRESSION,
+    });
+
+    expect(config.githubToken).toBe("");
+  });
+
+  test("falls back to GITHUB_TOKEN when metadata expression is unevaluated", () => {
+    const config = readActionConfig({
+      GITHUB_TOKEN: "github-token",
+      INPUT_GITHUB_TOKEN: GITHUB_TOKEN_EXPRESSION,
+    });
+
     expect(config.githubToken).toBe("github-token");
   });
 

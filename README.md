@@ -29,7 +29,9 @@ jobs:
 ```
 
 That is the recommended setup. No bot token, hosted server, dashboard, database, or
-extra Discord application is required.
+extra Discord application is required. Keep `contents: read`; DaisyTracker uses the
+default `${{ github.token }}` to enrich file, language, rename, and line-change details
+for private repositories.
 
 ## What It Sends
 
@@ -144,7 +146,7 @@ if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
 | Input | Default | Description |
 | --- | --- | --- |
 | `discord-webhook-url` | `DISCORD_WEBHOOK_URL` env | Discord webhook URL. Recommended value is `${{ secrets.DISCORD_WEBHOOK_URL }}`. |
-| `github-token` | `GITHUB_TOKEN` env | Optional token for fetching line-change stats, especially in private repos. |
+| `github-token` | `${{ github.token }}` | Token for private repository file, language, rename, and line-change enrichment. |
 | `title` | event-specific title | Custom embed title. |
 | `color` | `auto` | Embed color as `auto`, `#rrggbb`, `0xrrggbb`, or decimal. `auto` uses the dominant changed language. |
 | `username` | `DaisyTracker` | Discord webhook username override. |
@@ -161,20 +163,26 @@ if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
 | `max-messages` | `5` | Maximum Discord webhook messages sent for one push before truncating output. |
 | `send-on-events` | `push` | Comma-separated event names. Only `push` is currently sent. |
 
-## Optional GitHub Token
+## GitHub Token
 
-The minimal setup works without a GitHub token input for normal public repositories.
-If the push payload does not include changed-file details, DaisyTracker falls back to
-GitHub's public commit and compare APIs.
+The quick start already uses GitHub's default `${{ github.token }}` through the action
+metadata, so private repositories work without adding another secret. Keep:
 
-For private repositories, or for the most reliable file, language, rename, and
-line-change stats, pass the built-in token:
+```yaml
+permissions:
+  contents: read
+```
+
+For public repositories, DaisyTracker can also fall back to GitHub's public commit and
+compare APIs if the push payload does not include changed-file details.
+
+Override `github-token` only when you want to use a PAT or a GitHub App token:
 
 ```yaml
 - uses: DaisyCatTs/DaisyTracker@v2
   with:
     discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-    github-token: ${{ github.token }}
+    github-token: ${{ secrets.MY_GITHUB_TOKEN }}
 ```
 
 ## Discord Threads

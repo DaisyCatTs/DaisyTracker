@@ -87,6 +87,25 @@ describe("GitHub commit detail fetching", () => {
     expect(enrichment.stats).toEqual({ additions: 100, deletions: 0, total: 100 });
   });
 
+  test("marks file details unavailable when no token can read a private repository", async () => {
+    const event = await fixtureEvent("push.single.json");
+    for (const commit of event.commits) {
+      commit.added = [];
+      commit.modified = [];
+      commit.removed = [];
+    }
+
+    const enrichment = await fetchPushEnrichment(event, {
+      fetch: (async () => new Response("Not Found", { status: 404 })) as unknown as typeof fetch,
+      maxCommits: 10,
+      token: "",
+    });
+
+    expect(enrichment.fileDetailsUnavailable).toBe(true);
+    expect(enrichment.fileCount).toBe(0);
+    expect(enrichment.enrichmentNotes.join(" ")).toContain("github-token");
+  });
+
   test("falls back to webhook commit files on API failure", async () => {
     const event = await fixtureEvent("push.single.json");
     const details = await fetchCommitDetails(event, {

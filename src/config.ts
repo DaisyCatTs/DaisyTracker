@@ -7,13 +7,15 @@ const DEFAULT_IGNORED_BRANCHES = ["renovate/**", "dependabot/**"];
 type Env = NodeJS.ProcessEnv;
 
 export function readActionConfig(env: Env = process.env): ActionConfig {
+  const githubTokenInput = parseToken(getInput("github-token", env));
+
   return {
     avatarUrl: getInput("avatar-url", env),
     color: parseOptionalColor(getInput("color", env)),
     dependencyUpdates: parseDependencyUpdateMode(getInput("dependency-updates", env) || "silent"),
     discordWebhookUrl: getInput("discord-webhook-url", env) || env.DISCORD_WEBHOOK_URL || "",
     failOnError: parseBoolean(getInput("fail-on-error", env), true),
-    githubToken: getInput("github-token", env) || env.GITHUB_TOKEN || "",
+    githubToken: githubTokenInput || parseToken(env.GITHUB_TOKEN || ""),
     ignoredActors: parseCsv(getInput("ignored-actors", env), DEFAULT_IGNORED_ACTORS),
     ignoredBranches: parseCsv(getInput("ignored-branches", env), DEFAULT_IGNORED_BRANCHES),
     maxCommits: parsePositiveInteger(getInput("max-commits", env), 10, 1, 50),
@@ -101,6 +103,10 @@ function parseDependencyUpdateMode(value: string): DependencyUpdateMode {
 
   warn(`Invalid dependency-updates value "${value}". Falling back to "silent".`);
   return "silent";
+}
+
+function parseToken(value: string): string {
+  return value.includes("${{") ? "" : value;
 }
 
 export function parseOptionalColor(value: string): number | undefined {

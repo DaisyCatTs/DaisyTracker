@@ -14,6 +14,7 @@ import {
 } from "./helpers";
 
 const baseConfig = defaultConfig();
+const GITHUB_TOKEN_EXPRESSION = "$" + "{{ github.token }}";
 
 describe("Discord embed payloads", () => {
   test("builds a polished push payload within Discord limits", async () => {
@@ -245,5 +246,33 @@ describe("Discord embed payloads", () => {
 
     expect(messages[0]?.embeds[0]?.title?.length).toBeLessThanOrEqual(256);
     expect(messages[0]?.embeds[0]?.footer?.text).toContain("text shortened");
+  });
+
+  test("shows unavailable file details instead of misleading zero counts", async () => {
+    const event = await fixtureEvent("push.single.json");
+    const messages = buildPushPayloads(
+      event,
+      {
+        commitDetails: [],
+        enrichmentNotes: [
+          `Changed-file details need GitHub API credentials for private repositories. Pass github-token: ${GITHUB_TOKEN_EXPRESSION}.`,
+        ],
+        fileDetailsUnavailable: true,
+        fileCount: 0,
+        fileCountCapped: false,
+        fileGroups: {
+          added: [],
+          modified: [],
+          renamed: [],
+          removed: [],
+        },
+      },
+      baseConfig,
+    );
+
+    const fields = messages[0]?.embeds[0]?.fields || [];
+    expect(fields.find((field) => field.name === "Files")?.value).toBe("Unavailable");
+    expect(fields.find((field) => field.name === "Language")?.value).toBe("Unavailable");
+    expect(JSON.stringify(messages)).toContain("github-token");
   });
 });

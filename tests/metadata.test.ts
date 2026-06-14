@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { readActionConfig } from "../src/action";
 
+const GITHUB_TOKEN_EXPRESSION = "$" + "{{ github.token }}";
+
 describe("repository metadata", () => {
   test("README documents every action input", async () => {
     const actionInputs = Object.keys(await actionInputMetadata());
@@ -19,6 +21,7 @@ describe("repository metadata", () => {
     expect(config.color).toBeUndefined();
     expect(metadata["dependency-updates"]?.default).toBe(config.dependencyUpdates);
     expect(metadata["fail-on-error"]?.default).toBe(String(config.failOnError));
+    expect(metadata["github-token"]?.default).toBe(GITHUB_TOKEN_EXPRESSION);
     expect(metadata["ignored-actors"]?.default).toBe(config.ignoredActors.join(","));
     expect(metadata["ignored-branches"]?.default).toBe(config.ignoredBranches.join(","));
     expect(metadata["max-commits"]?.default).toBe(String(config.maxCommits));

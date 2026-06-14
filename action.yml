@@ -7,8 +7,9 @@ inputs:
     description: "Discord webhook URL. Falls back to DISCORD_WEBHOOK_URL."
     required: false
   github-token:
-    description: "Optional GitHub token for fetching line-change stats on private repositories. Falls back to GITHUB_TOKEN."
+    description: "GitHub token for private repository file, language, rename, and line-change enrichment."
     required: false
+    default: ${{ github.token }}
   title:
     description: "Optional Discord embed title."
     required: false

@@ -41,6 +41,7 @@ interface GitHubCompareResponse {
 const DEFAULT_CONCURRENCY = 6;
 const DEFAULT_TIMEOUT_MS = 10_000;
 const GITHUB_COMPARE_FILE_LIMIT = 300;
+const GITHUB_TOKEN_EXPRESSION = "$" + "{{ github.token }}";
 
 export async function fetchPushEnrichment(
   event: NormalizedPushEvent,
@@ -49,8 +50,9 @@ export async function fetchPushEnrichment(
   const visibleCommits = event.commits.slice(-options.maxCommits);
   const payloadDetails = event.commits.map(commitDetailsFromPayload);
   const visiblePayloadDetails = visibleCommits.map(commitDetailsFromPayload);
+  const payloadHasFileDetails = hasFileDetails(payloadDetails);
 
-  if (!options.token && hasFileDetails(payloadDetails)) {
+  if (!options.token && payloadHasFileDetails) {
     return enrichmentFromDetails(visiblePayloadDetails, payloadDetails);
   }
 
@@ -71,9 +73,17 @@ export async function fetchPushEnrichment(
 
   const commitDetails = await fetchCommitDetails(event, {
     ...options,
-    forceApi: !options.token && !hasFileDetails(payloadDetails),
+    forceApi: !options.token && !payloadHasFileDetails,
   });
   const enrichment = enrichmentFromDetails(commitDetails, commitDetails);
+  if (!payloadHasFileDetails && !hasFileDetails(commitDetails) && event.commits.length > 0) {
+    enrichment.fileDetailsUnavailable = true;
+    enrichment.enrichmentNotes.push(
+      options.token
+        ? "Changed-file details were unavailable from GitHub API; showing commit summary only."
+        : `Changed-file details need GitHub API credentials for private repositories. Pass github-token: ${GITHUB_TOKEN_EXPRESSION}.`,
+    );
+  }
   if (event.commits.length > commitDetails.length) {
     enrichment.enrichmentNotes.push(
       `File details are limited to the latest ${commitDetails.length} commit${

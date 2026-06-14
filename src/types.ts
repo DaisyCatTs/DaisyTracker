@@ -95,6 +95,7 @@ export interface CommitDetails extends CommitFileGroups {
 export interface PushEnrichment {
   commitDetails: CommitDetails[];
   enrichmentNotes: string[];
+  fileDetailsUnavailable?: boolean;
   fileCount: number;
   fileCountCapped: boolean;
   fileGroups: Required<CommitFileGroups>;

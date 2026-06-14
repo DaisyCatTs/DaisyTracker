@@ -23,13 +23,14 @@ function escapeCommandData(value) {
 var DEFAULT_IGNORED_ACTORS = ["dependabot[bot]", "renovate[bot]", "github-actions[bot]"];
 var DEFAULT_IGNORED_BRANCHES = ["renovate/**", "dependabot/**"];
 function readActionConfig(env = process.env) {
+  const githubTokenInput = parseToken(getInput("github-token", env));
   return {
     avatarUrl: getInput("avatar-url", env),
     color: parseOptionalColor(getInput("color", env)),
     dependencyUpdates: parseDependencyUpdateMode(getInput("dependency-updates", env) || "silent"),
     discordWebhookUrl: getInput("discord-webhook-url", env) || env.DISCORD_WEBHOOK_URL || "",
     failOnError: parseBoolean(getInput("fail-on-error", env), true),
-    githubToken: getInput("github-token", env) || env.GITHUB_TOKEN || "",
+    githubToken: githubTokenInput || parseToken(env.GITHUB_TOKEN || ""),
     ignoredActors: parseCsv(getInput("ignored-actors", env), DEFAULT_IGNORED_ACTORS),
     ignoredBranches: parseCsv(getInput("ignored-branches", env), DEFAULT_IGNORED_BRANCHES),
     maxCommits: parsePositiveInteger(getInput("max-commits", env), 10, 1, 50),
@@ -95,6 +96,9 @@ function parseDependencyUpdateMode(value) {
   }
   warn(`Invalid dependency-updates value "${value}". Falling back to "silent".`);
   return "silent";
+}
+function parseToken(value) {
+  return value.includes("${{") ? "" : value;
 }
 function parseOptionalColor(value) {
   const trimmed = value.trim();
@@ -2411,7 +2415,7 @@ function buildPushPayloads(event, input, config) {
     ...changes.removed
   ]);
   const latestCommit = event.headCommit || event.commits.at(-1);
-  const thumbnailUrl = languageIconUrl(language) || event.repository.avatarUrl;
+  const thumbnailUrl = enrichment.fileDetailsUnavailable ? event.repository.avatarUrl : languageIconUrl(language) || event.repository.avatarUrl;
   const color = embedColor(config, language);
   const notes = eventNotes(event, enrichment);
   const primaryEmbed = {
@@ -2428,7 +2432,7 @@ function buildPushPayloads(event, input, config) {
       inlineField("Commits", commitCountLabel(event)),
       inlineField("Files", fileCountLabel(enrichment)),
       inlineField("Lines", lineSummary(enrichment.stats)),
-      inlineField("Language", language.name),
+      inlineField("Language", languageLabel(language, enrichment)),
       {
         inline: false,
         name: `Recent commits (${Math.min(event.commits.length, config.maxCommits)})`,
@@ -2750,7 +2754,13 @@ function commitFileNames(commit) {
   return [...commit.added, ...commit.modified, ...commit.renamed || [], ...commit.removed];
 }
 function fileCountLabel(enrichment) {
+  if (enrichment.fileDetailsUnavailable) {
+    return "Unavailable";
+  }
   return enrichment.fileCountCapped ? `${enrichment.fileCount}+` : String(enrichment.fileCount);
+}
+function languageLabel(language, enrichment) {
+  return enrichment.fileDetailsUnavailable ? "Unavailable" : language.name;
 }
 function finalizeEmbed(embed) {
   let result = normalizeEmbedWithMetadata(embed);
@@ -2955,11 +2965,13 @@ function refTypeFromRef(ref) {
 var DEFAULT_CONCURRENCY = 6;
 var DEFAULT_TIMEOUT_MS2 = 1e4;
 var GITHUB_COMPARE_FILE_LIMIT = 300;
+var GITHUB_TOKEN_EXPRESSION = "${{ github.token }}";
 async function fetchPushEnrichment(event, options) {
   const visibleCommits = event.commits.slice(-options.maxCommits);
   const payloadDetails = event.commits.map(commitDetailsFromPayload);
   const visiblePayloadDetails = visibleCommits.map(commitDetailsFromPayload);
-  if (!options.token && hasFileDetails(payloadDetails)) {
+  const payloadHasFileDetails = hasFileDetails(payloadDetails);
+  if (!options.token && payloadHasFileDetails) {
     return enrichmentFromDetails2(visiblePayloadDetails, payloadDetails);
   }
   const fetchImpl = options.fetch || globalThis.fetch;
@@ -2978,9 +2990,15 @@ async function fetchPushEnrichment(event, options) {
   }
   const commitDetails = await fetchCommitDetails(event, {
     ...options,
-    forceApi: !options.token && !hasFileDetails(payloadDetails)
+    forceApi: !options.token && !payloadHasFileDetails
   });
   const enrichment = enrichmentFromDetails2(commitDetails, commitDetails);
+  if (!payloadHasFileDetails && !hasFileDetails(commitDetails) && event.commits.length > 0) {
+    enrichment.fileDetailsUnavailable = true;
+    enrichment.enrichmentNotes.push(
+      options.token ? "Changed-file details were unavailable from GitHub API; showing commit summary only." : `Changed-file details need GitHub API credentials for private repositories. Pass github-token: ${GITHUB_TOKEN_EXPRESSION}.`
+    );
+  }
   if (event.commits.length > commitDetails.length) {
     enrichment.enrichmentNotes.push(
       `File details are limited to the latest ${commitDetails.length} commit${commitDetails.length === 1 ? "" : "s"} because compare enrichment was unavailable.`
