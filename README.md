@@ -69,6 +69,35 @@ The `with:` form is preferred for new workflows because it makes the Discord web
 input explicit. You do not need to create a GitHub token secret; GitHub provides
 `GITHUB_TOKEN` automatically for each workflow run.
 
+## Private Repositories
+
+Private repositories work with the quick start. DaisyTracker's `github-token` input
+defaults to GitHub's automatic `${{ github.token }}`, so the Action can call GitHub's
+compare and commit APIs to fill in changed files, line stats, renamed files, and
+language detection.
+
+Keep this permission in the job:
+
+```yaml
+permissions:
+  contents: read
+```
+
+You do not need to create `GITHUB_TOKEN` in repository secrets. GitHub creates it for
+each workflow run. Use a custom PAT or GitHub App token only when your organization has
+special access rules or you need to read a different repository:
+
+```yaml
+- name: Push via DaisyTracker
+  uses: DaisyCatTs/DaisyTracker@master
+  with:
+    discord-webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+    github-token: ${{ secrets.MY_GITHUB_TOKEN }}
+```
+
+If GitHub API access is blocked, DaisyTracker still sends the push summary. It marks
+file and language details as `Unavailable` instead of showing misleading zero counts.
+
 ## What It Sends
 
 DaisyTracker sends a compact Discord dashboard for push events:
