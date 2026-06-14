@@ -11,6 +11,7 @@ import type {
 interface FetchCommitDetailsOptions {
   fetch?: typeof fetch;
   concurrency?: number;
+  forceApi?: boolean;
   maxCommits: number;
   timeoutMs?: number;
   token: string;
@@ -49,12 +50,14 @@ export async function fetchPushEnrichment(
   const payloadDetails = event.commits.map(commitDetailsFromPayload);
   const visiblePayloadDetails = visibleCommits.map(commitDetailsFromPayload);
 
-  if (!options.token) {
+  if (!options.token && hasFileDetails(payloadDetails)) {
     return enrichmentFromDetails(visiblePayloadDetails, payloadDetails);
   }
 
   const fetchImpl = options.fetch || globalThis.fetch;
-  const compare = await fetchCompareEnrichment(event, options.token, fetchImpl, options.timeoutMs);
+  const compare = await fetchCompareEnrichment(event, options.token, fetchImpl, options.timeoutMs, {
+    warnOnFailure: Boolean(options.token),
+  });
   if (compare) {
     return {
       commitDetails: visiblePayloadDetails,
@@ -66,7 +69,10 @@ export async function fetchPushEnrichment(
     };
   }
 
-  const commitDetails = await fetchCommitDetails(event, options);
+  const commitDetails = await fetchCommitDetails(event, {
+    ...options,
+    forceApi: !options.token && !hasFileDetails(payloadDetails),
+  });
   const enrichment = enrichmentFromDetails(commitDetails, commitDetails);
   if (event.commits.length > commitDetails.length) {
     enrichment.enrichmentNotes.push(
@@ -85,7 +91,7 @@ export async function fetchCommitDetails(
 ): Promise<CommitDetails[]> {
   const commits = event.commits.slice(-options.maxCommits);
 
-  if (!options.token) {
+  if (!options.token && !options.forceApi) {
     return commits.map(commitDetailsFromPayload);
   }
 
@@ -130,10 +136,7 @@ async function fetchCommitDetail(
     `https://api.github.com/repos/${event.repository.fullName}/commits/${commit.id}`,
     {
       headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${token}`,
-        "User-Agent": "DaisyCatTs-DaisyTracker",
-        "X-GitHub-Api-Version": "2022-11-28",
+        ...githubHeaders(token),
       },
     },
     timeoutMs,
@@ -164,6 +167,7 @@ async function fetchCompareEnrichment(
   token: string,
   fetchImpl: typeof fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
+  options: { warnOnFailure?: boolean } = {},
 ): Promise<Omit<PushEnrichment, "commitDetails"> | undefined> {
   if (!canCompare(event)) {
     return undefined;
@@ -175,10 +179,7 @@ async function fetchCompareEnrichment(
       `https://api.github.com/repos/${event.repository.fullName}/compare/${event.before}...${event.after}`,
       {
         headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${token}`,
-          "User-Agent": "DaisyCatTs-DaisyTracker",
-          "X-GitHub-Api-Version": "2022-11-28",
+          ...githubHeaders(token),
         },
       },
       timeoutMs,
@@ -210,9 +211,20 @@ async function fetchCompareEnrichment(
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    warn(`Could not fetch compare details. Falling back to commit details. ${message}`);
+    if (options.warnOnFailure) {
+      warn(`Could not fetch compare details. Falling back to commit details. ${message}`);
+    }
     return undefined;
   }
+}
+
+function githubHeaders(token: string): HeadersInit {
+  return {
+    Accept: "application/vnd.github+json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    "User-Agent": "DaisyCatTs-DaisyTracker",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
 }
 
 function groupCommitFiles(
@@ -261,6 +273,16 @@ function enrichmentFromDetails(
     fileGroups,
     stats,
   };
+}
+
+function hasFileDetails(details: CommitDetails[]): boolean {
+  return details.some(
+    (detail) =>
+      detail.added.length > 0 ||
+      detail.modified.length > 0 ||
+      (detail.renamed || []).length > 0 ||
+      detail.removed.length > 0,
+  );
 }
 
 function aggregateFileGroups(details: CommitDetails[]): Required<CommitFileGroups> {

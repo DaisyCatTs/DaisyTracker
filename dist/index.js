@@ -2959,11 +2959,13 @@ async function fetchPushEnrichment(event, options) {
   const visibleCommits = event.commits.slice(-options.maxCommits);
   const payloadDetails = event.commits.map(commitDetailsFromPayload);
   const visiblePayloadDetails = visibleCommits.map(commitDetailsFromPayload);
-  if (!options.token) {
+  if (!options.token && hasFileDetails(payloadDetails)) {
     return enrichmentFromDetails2(visiblePayloadDetails, payloadDetails);
   }
   const fetchImpl = options.fetch || globalThis.fetch;
-  const compare = await fetchCompareEnrichment(event, options.token, fetchImpl, options.timeoutMs);
+  const compare = await fetchCompareEnrichment(event, options.token, fetchImpl, options.timeoutMs, {
+    warnOnFailure: Boolean(options.token)
+  });
   if (compare) {
     return {
       commitDetails: visiblePayloadDetails,
@@ -2974,7 +2976,10 @@ async function fetchPushEnrichment(event, options) {
       stats: compare.stats
     };
   }
-  const commitDetails = await fetchCommitDetails(event, options);
+  const commitDetails = await fetchCommitDetails(event, {
+    ...options,
+    forceApi: !options.token && !hasFileDetails(payloadDetails)
+  });
   const enrichment = enrichmentFromDetails2(commitDetails, commitDetails);
   if (event.commits.length > commitDetails.length) {
     enrichment.enrichmentNotes.push(
@@ -2985,7 +2990,7 @@ async function fetchPushEnrichment(event, options) {
 }
 async function fetchCommitDetails(event, options) {
   const commits = event.commits.slice(-options.maxCommits);
-  if (!options.token) {
+  if (!options.token && !options.forceApi) {
     return commits.map(commitDetailsFromPayload);
   }
   return mapWithConcurrency(commits, options.concurrency || DEFAULT_CONCURRENCY, async (commit) => {
@@ -3021,10 +3026,7 @@ async function fetchCommitDetail(event, commit, token, fetchImpl, timeoutMs) {
     `https://api.github.com/repos/${event.repository.fullName}/commits/${commit.id}`,
     {
       headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${token}`,
-        "User-Agent": "DaisyCatTs-DaisyTracker",
-        "X-GitHub-Api-Version": "2022-11-28"
+        ...githubHeaders(token)
       }
     },
     timeoutMs
@@ -3044,7 +3046,7 @@ async function fetchCommitDetail(event, commit, token, fetchImpl, timeoutMs) {
     } : void 0
   };
 }
-async function fetchCompareEnrichment(event, token, fetchImpl, timeoutMs = DEFAULT_TIMEOUT_MS2) {
+async function fetchCompareEnrichment(event, token, fetchImpl, timeoutMs = DEFAULT_TIMEOUT_MS2, options = {}) {
   if (!canCompare(event)) {
     return void 0;
   }
@@ -3054,10 +3056,7 @@ async function fetchCompareEnrichment(event, token, fetchImpl, timeoutMs = DEFAU
       `https://api.github.com/repos/${event.repository.fullName}/compare/${event.before}...${event.after}`,
       {
         headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${token}`,
-          "User-Agent": "DaisyCatTs-DaisyTracker",
-          "X-GitHub-Api-Version": "2022-11-28"
+          ...githubHeaders(token)
         }
       },
       timeoutMs
@@ -3085,9 +3084,19 @@ async function fetchCompareEnrichment(event, token, fetchImpl, timeoutMs = DEFAU
     };
   } catch (error2) {
     const message = error2 instanceof Error ? error2.message : String(error2);
-    warn(`Could not fetch compare details. Falling back to commit details. ${message}`);
+    if (options.warnOnFailure) {
+      warn(`Could not fetch compare details. Falling back to commit details. ${message}`);
+    }
     return void 0;
   }
+}
+function githubHeaders(token) {
+  return {
+    Accept: "application/vnd.github+json",
+    ...token ? { Authorization: `Bearer ${token}` } : {},
+    "User-Agent": "DaisyCatTs-DaisyTracker",
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
 }
 function groupCommitFiles(files) {
   const groups = {
@@ -3125,6 +3134,11 @@ function enrichmentFromDetails2(commitDetails, fileDetails) {
     fileGroups,
     stats
   };
+}
+function hasFileDetails(details) {
+  return details.some(
+    (detail) => detail.added.length > 0 || detail.modified.length > 0 || (detail.renamed || []).length > 0 || detail.removed.length > 0
+  );
 }
 function aggregateFileGroups(details) {
   const added = /* @__PURE__ */ new Set();

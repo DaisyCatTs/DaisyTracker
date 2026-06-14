@@ -40,7 +40,7 @@ DaisyTracker sends a compact Discord dashboard for push events:
 - force-push notes
 - commit count and recent commit links
 - changed file count
-- line-change stats when a token is provided and GitHub API access allows it
+- line-change stats when GitHub API access allows it
 - dominant changed language
 - added, modified, renamed, and removed file sections
 - link to the compare view and workflow run
@@ -161,10 +161,14 @@ if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
 | `max-messages` | `5` | Maximum Discord webhook messages sent for one push before truncating output. |
 | `send-on-events` | `push` | Comma-separated event names. Only `push` is currently sent. |
 
-## Optional Line Stats
+## Optional GitHub Token
 
-The minimal setup works without a GitHub token input. If you want reliable line-change
-stats for private repositories, pass the built-in token:
+The minimal setup works without a GitHub token input for normal public repositories.
+If the push payload does not include changed-file details, DaisyTracker falls back to
+GitHub's public commit and compare APIs.
+
+For private repositories, or for the most reliable file, language, rename, and
+line-change stats, pass the built-in token:
 
 ```yaml
 - uses: DaisyCatTs/DaisyTracker@v2

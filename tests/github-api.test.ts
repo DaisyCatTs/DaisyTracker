@@ -15,6 +15,78 @@ describe("GitHub commit detail fetching", () => {
     expect(details[0]?.stats).toBeUndefined();
   });
 
+  test("uses public compare API without a token when payload file lists are empty", async () => {
+    const event = await fixtureEvent("push.single.json");
+    for (const commit of event.commits) {
+      commit.added = [];
+      commit.modified = [];
+      commit.removed = [];
+    }
+    if (event.headCommit) {
+      event.headCommit.added = [];
+      event.headCommit.modified = [];
+      event.headCommit.removed = [];
+    }
+
+    const enrichment = await fetchPushEnrichment(event, {
+      fetch: (async (_url: string | URL | Request, init?: RequestInit) => {
+        expect((init?.headers as Record<string, string>).Authorization).toBeUndefined();
+        return new Response(
+          JSON.stringify({
+            files: [
+              {
+                additions: 15,
+                changes: 20,
+                deletions: 5,
+                filename: "src/main/kotlin/App.kt",
+                status: "modified",
+              },
+            ],
+          }),
+          { status: 200 },
+        );
+      }) as unknown as typeof fetch,
+      maxCommits: 10,
+      token: "",
+    });
+
+    expect(enrichment.fileCount).toBe(1);
+    expect(enrichment.fileGroups.modified).toContain("src/main/kotlin/App.kt");
+    expect(enrichment.stats).toEqual({ additions: 15, deletions: 5, total: 20 });
+  });
+
+  test("uses public commit API without a token for created refs with empty file lists", async () => {
+    const event = await fixtureEvent("push.single.json");
+    event.created = true;
+    event.before = "0000000000000000000000000000000000000000";
+    for (const commit of event.commits) {
+      commit.added = [];
+      commit.modified = [];
+      commit.removed = [];
+    }
+
+    const urls: string[] = [];
+    const enrichment = await fetchPushEnrichment(event, {
+      fetch: (async (url: string | URL | Request, init?: RequestInit) => {
+        urls.push(String(url));
+        expect((init?.headers as Record<string, string>).Authorization).toBeUndefined();
+        return new Response(
+          JSON.stringify({
+            files: [{ filename: "src/Main.java", status: "added" }],
+            stats: { additions: 100, deletions: 0, total: 100 },
+          }),
+          { status: 200 },
+        );
+      }) as unknown as typeof fetch,
+      maxCommits: 10,
+      token: "",
+    });
+
+    expect(urls[0]).toContain("/commits/");
+    expect(enrichment.fileGroups.added).toContain("src/Main.java");
+    expect(enrichment.stats).toEqual({ additions: 100, deletions: 0, total: 100 });
+  });
+
   test("falls back to webhook commit files on API failure", async () => {
     const event = await fixtureEvent("push.single.json");
     const details = await fetchCommitDetails(event, {

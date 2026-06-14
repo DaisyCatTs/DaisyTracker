@@ -1,6 +1,6 @@
 {
   "name": "daisytracker",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A minimal GitHub Action that sends polished GitHub push summaries to Discord.",
   "main": "dist/index.js",
   "packageManager": "bun@1.3.14",
