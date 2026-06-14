@@ -35,7 +35,7 @@ describe("Discord embed payloads", () => {
     expect(payloads).toHaveLength(1);
     const firstPayload = payloads[0];
     expect(firstPayload).toBeDefined();
-    expect(firstPayload?.embeds[0]?.title).toBe("GitHub push delivered");
+    expect(firstPayload?.embeds[0]?.title).toBe("Push delivered");
     if (!firstPayload) {
       throw new Error("Expected first payload.");
     }
@@ -146,7 +146,7 @@ describe("Discord embed payloads", () => {
 
     const message = buildRefDeletedPayload(event, baseConfig);
 
-    expect(message.embeds[0]?.title).toBe("GitHub ref deleted");
+    expect(message.embeds[0]?.title).toBe("Branch deleted");
     expect(JSON.stringify(message)).toContain("branch:master");
   });
 
@@ -158,7 +158,7 @@ describe("Discord embed payloads", () => {
 
     const messages = buildPushPayloads(event, [], baseConfig);
 
-    expect(messages[0]?.embeds[0]?.title).toBe("GitHub branch created");
+    expect(messages[0]?.embeds[0]?.title).toBe("Branch created");
     expect(JSON.stringify(messages)).toContain("force push");
   });
 
@@ -207,5 +207,43 @@ describe("Discord embed payloads", () => {
       expect(embedTextLength(message)).toBeLessThanOrEqual(6000);
       expect(message.embeds[0]?.fields?.length || 0).toBeLessThanOrEqual(25);
     }
+  });
+
+  test("caps payload count with max-messages and marks truncation", async () => {
+    const event = await fixtureEvent("push.single.json");
+    const files = Array.from(
+      { length: 120 },
+      (_, index) =>
+        `src/generated/${index.toString().padStart(3, "0")}/${"deep-directory/".repeat(
+          12,
+        )}component.ts`,
+    );
+
+    const messages = buildPushPayloads(
+      event,
+      [
+        {
+          added: files,
+          id: event.commits[0]?.id || "",
+          modified: files,
+          removed: files,
+        },
+      ],
+      defaultConfig({ maxFilesPerSection: 120, maxMessages: 2 }),
+    );
+
+    expect(messages).toHaveLength(2);
+    expect(messages.at(-1)?.embeds[0]?.footer?.text).toContain("Output truncated to 2 messages");
+  });
+
+  test("marks normalized text shortening in the footer", async () => {
+    const event = await fixtureEvent("push.single.json");
+    const messages = buildPushPayloads(event, [], {
+      ...baseConfig,
+      title: "x".repeat(300),
+    });
+
+    expect(messages[0]?.embeds[0]?.title?.length).toBeLessThanOrEqual(256);
+    expect(messages[0]?.embeds[0]?.footer?.text).toContain("text shortened");
   });
 });

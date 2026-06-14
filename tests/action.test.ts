@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,8 +8,12 @@ import singlePayload from "./fixtures/push.single.json";
 
 const originalExitCode = process.exitCode;
 
+beforeEach(() => {
+  resetExitCode();
+});
+
 afterEach(() => {
-  process.exitCode = originalExitCode;
+  resetExitCode();
 });
 
 describe("Action runtime", () => {
@@ -33,7 +37,7 @@ describe("Action runtime", () => {
 
     expect(calls).toHaveLength(1);
     const body = JSON.parse(String(calls[0]?.body));
-    expect(body.embeds[0].title).toBe("GitHub push delivered");
+    expect(body.embeds[0].title).toBe("Push delivered");
     expect(body.allowed_mentions).toEqual({ parse: [] });
     expect(process.exitCode).not.toBe(1);
   });
@@ -103,7 +107,7 @@ describe("Action runtime", () => {
     );
 
     expect(calls).toHaveLength(1);
-    expect(JSON.parse(String(calls[0]?.body)).embeds[0].title).toBe("GitHub push delivered");
+    expect(JSON.parse(String(calls[0]?.body)).embeds[0].title).toBe("Push delivered");
   });
 
   test("unsupported events exit successfully", async () => {
@@ -137,6 +141,19 @@ describe("Action runtime", () => {
     expect(process.exitCode).toBe(1);
   });
 
+  test("missing webhook URL still fails with fail-on-error false", async () => {
+    const eventPath = await writeTempEvent("single-missing-webhook-soft", singlePayload);
+
+    await run({
+      GITHUB_ACTOR: "DaisyCatTs",
+      GITHUB_EVENT_NAME: "push",
+      GITHUB_EVENT_PATH: eventPath,
+      INPUT_FAIL_ON_ERROR: "false",
+    });
+
+    expect(process.exitCode).toBe(1);
+  });
+
   test("fail-on-error false warns and exits successfully", async () => {
     const eventPath = await writeTempEvent("single-fail-soft", singlePayload);
     const fetchMock = async () => new Response("bad payload", { status: 400 });
@@ -154,6 +171,24 @@ describe("Action runtime", () => {
 
     expect(process.exitCode).not.toBe(1);
   });
+
+  test("webhook configuration errors still fail with fail-on-error false", async () => {
+    const eventPath = await writeTempEvent("single-webhook-config-fail", singlePayload);
+    const fetchMock = async () => new Response("missing", { status: 404 });
+
+    await run(
+      {
+        DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/123/token",
+        GITHUB_ACTOR: "DaisyCatTs",
+        GITHUB_EVENT_NAME: "push",
+        GITHUB_EVENT_PATH: eventPath,
+        INPUT_FAIL_ON_ERROR: "false",
+      },
+      fetchMock as unknown as typeof fetch,
+    );
+
+    expect(process.exitCode).toBe(1);
+  });
 });
 
 async function writeTempEvent(name: string, payload: unknown): Promise<string> {
@@ -161,4 +196,12 @@ async function writeTempEvent(name: string, payload: unknown): Promise<string> {
   const path = join(directory, `${name}.json`);
   await writeFile(path, JSON.stringify(payload), "utf8");
   return path;
+}
+
+function resetExitCode(): void {
+  if (originalExitCode === undefined) {
+    process.exitCode = 0;
+  } else {
+    process.exitCode = originalExitCode;
+  }
 }

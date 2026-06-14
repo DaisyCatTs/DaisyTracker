@@ -54,9 +54,13 @@ inputs:
     required: false
     default: "10"
   max-files-per-section:
-    description: "Maximum files to show in each added, modified, and removed section."
+    description: "Maximum files to show in each added, modified, renamed, and removed section."
     required: false
     default: "10"
+  max-messages:
+    description: "Maximum Discord webhook messages to send for one push before truncating output."
+    required: false
+    default: "5"
   send-on-events:
     description: "Comma-separated GitHub event names to send. Currently push is supported."
     required: false

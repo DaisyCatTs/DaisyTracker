@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { DaisyTrackerError } from "./errors";
 import type {
   CommitFileGroups,
   NormalizedCommit,
@@ -78,11 +79,21 @@ export async function loadGitHubEvent(env: Env = process.env): Promise<Normalize
 
   const eventPath = env.GITHUB_EVENT_PATH;
   if (!eventPath) {
-    throw new Error("Missing GITHUB_EVENT_PATH. DaisyTracker must run inside GitHub Actions.");
+    throw new DaisyTrackerError(
+      "Missing GITHUB_EVENT_PATH. DaisyTracker must run inside GitHub Actions.",
+      { kind: "configuration" },
+    );
   }
 
-  const payload = JSON.parse(await readFile(eventPath, "utf8")) as PushPayload;
-  return normalizePushPayload(payload, env);
+  try {
+    const payload = JSON.parse(await readFile(eventPath, "utf8")) as PushPayload;
+    return normalizePushPayload(payload, env);
+  } catch (error) {
+    throw new DaisyTrackerError("Could not read or parse the GitHub event payload.", {
+      cause: error,
+      kind: "configuration",
+    });
+  }
 }
 
 export function normalizePushPayload(

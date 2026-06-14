@@ -3,7 +3,7 @@ import {
   DISCORD_LIMITS,
   appendFooterNote,
   canAddField,
-  normalizeEmbed,
+  normalizeEmbedWithMetadata,
   truncate,
 } from "./discord-limits";
 import { detectDominantLanguage, languageIconUrl } from "./languages";
@@ -15,22 +15,18 @@ import type {
   LanguageInfo,
   NormalizedCommit,
   NormalizedPushEvent,
+  PushEnrichment,
 } from "./types";
 
-const MAX_PAYLOADS = 5;
-
-interface AggregatedChanges extends Required<CommitFileGroups> {
-  additions?: number;
-  deletions?: number;
-  total?: number;
-}
+type PushPayloadInput = CommitDetails[] | PushEnrichment;
 
 export function buildPushPayloads(
   event: NormalizedPushEvent,
-  details: CommitDetails[],
+  input: PushPayloadInput,
   config: ActionConfig,
 ): DiscordWebhookPayload[] {
-  const changes = aggregateChanges(details);
+  const enrichment = Array.isArray(input) ? enrichmentFromDetails(input) : input;
+  const changes = enrichment.fileGroups;
   const language = detectDominantLanguage([
     ...changes.added,
     ...changes.modified,
@@ -40,9 +36,9 @@ export function buildPushPayloads(
   const latestCommit = event.headCommit || event.commits.at(-1);
   const thumbnailUrl = languageIconUrl(language) || event.repository.avatarUrl;
   const color = embedColor(config, language);
-  const notes = eventNotes(event);
+  const notes = eventNotes(event, enrichment);
 
-  const primaryEmbed: APIEmbed = normalizeEmbed({
+  const primaryEmbed: APIEmbed = {
     author: {
       icon_url: event.sender?.avatarUrl || event.repository.avatarUrl,
       name: `${event.actor} ${eventVerb(event)} ${refLabel(event)}`,
@@ -54,8 +50,8 @@ export function buildPushPayloads(
       inlineField("Repository", markdownLink(event.repository.fullName, event.repository.url)),
       inlineField("Ref", code(refLabel(event))),
       inlineField("Commits", commitCountLabel(event)),
-      inlineField("Files", String(totalFileCount(changes))),
-      inlineField("Lines", lineSummary(changes)),
+      inlineField("Files", fileCountLabel(enrichment)),
+      inlineField("Lines", lineSummary(enrichment.stats)),
       inlineField("Language", language.name),
       {
         inline: false,
@@ -72,17 +68,20 @@ export function buildPushPayloads(
       : new Date().toISOString(),
     title: config.title || titleForPush(event),
     url: event.compareUrl || event.repository.url,
-  });
+  };
 
   if (notes.length > 0) {
-    primaryEmbed.fields = [
-      ...(primaryEmbed.fields || []),
-      {
-        inline: false,
-        name: "Notes",
-        value: notes.join("\n"),
-      },
-    ];
+    const noteField = {
+      inline: false,
+      name: "Notes",
+      value: notes.join("\n"),
+    };
+
+    if (canAddField(primaryEmbed, noteField)) {
+      primaryEmbed.fields = [...(primaryEmbed.fields || []), noteField];
+    } else {
+      appendFooterNote(primaryEmbed, "Some notes were omitted.");
+    }
   }
 
   const overflowFields: APIEmbedField[] = [];
@@ -99,9 +98,9 @@ export function buildPushPayloads(
     }
   }
 
-  const payloads = [payload(primaryEmbed, config)];
+  const payloads = [payload(finalizeEmbed(primaryEmbed), config)];
   for (const field of overflowFields) {
-    const embed = normalizeEmbed({
+    const embed = finalizeEmbed({
       color,
       fields: [field],
       footer: {
@@ -113,7 +112,7 @@ export function buildPushPayloads(
     payloads.push(payload(embed, config));
   }
 
-  return capPayloads(payloads);
+  return capPayloads(payloads, config.maxMessages);
 }
 
 export function buildCompactDependencyPayload(
@@ -123,7 +122,7 @@ export function buildCompactDependencyPayload(
 ): DiscordWebhookPayload {
   const latestCommit = event.headCommit || event.commits.at(-1);
   const language = detectDominantLanguage(event.commits.flatMap(commitFileNames));
-  const embed = normalizeEmbed({
+  const embed = finalizeEmbed({
     color: embedColor(config, language),
     description:
       "A dependency automation update was detected. DaisyTracker is configured to avoid noisy full notifications for these updates.",
@@ -156,7 +155,7 @@ export function buildRefDeletedPayload(
   event: NormalizedPushEvent,
   config: ActionConfig,
 ): DiscordWebhookPayload {
-  const embed = normalizeEmbed({
+  const embed = finalizeEmbed({
     author: {
       icon_url: event.sender?.avatarUrl || event.repository.avatarUrl,
       name: `${event.actor} deleted ${refLabel(event)}`,
@@ -175,7 +174,7 @@ export function buildRefDeletedPayload(
       text: footerText(event),
     },
     timestamp: new Date().toISOString(),
-    title: config.title || "GitHub ref deleted",
+    title: config.title || titleForDeletion(event),
     url: event.repository.url,
   });
 
@@ -192,7 +191,34 @@ function payload(embed: APIEmbed, config: ActionConfig): DiscordWebhookPayload {
   };
 }
 
-function aggregateChanges(details: CommitDetails[]): AggregatedChanges {
+function enrichmentFromDetails(details: CommitDetails[]): PushEnrichment {
+  const fileGroups = aggregateChanges(details);
+  const stats =
+    typeof fileGroups.additions === "number" &&
+    typeof fileGroups.deletions === "number" &&
+    typeof fileGroups.total === "number"
+      ? {
+          additions: fileGroups.additions,
+          deletions: fileGroups.deletions,
+          total: fileGroups.total,
+        }
+      : undefined;
+
+  return {
+    commitDetails: details,
+    enrichmentNotes: [],
+    fileCount: totalFileCount(fileGroups),
+    fileCountCapped: false,
+    fileGroups,
+    stats,
+  };
+}
+
+function aggregateChanges(details: CommitDetails[]): Required<CommitFileGroups> & {
+  additions?: number;
+  deletions?: number;
+  total?: number;
+} {
   const added = new Set<string>();
   const modified = new Set<string>();
   const renamed = new Set<string>();
@@ -243,8 +269,8 @@ function buildDescription(event: NormalizedPushEvent): string {
   )}.${compare}`;
 }
 
-function eventNotes(event: NormalizedPushEvent): string[] {
-  const notes: string[] = [];
+function eventNotes(event: NormalizedPushEvent, enrichment: PushEnrichment): string[] {
+  const notes = [...enrichment.enrichmentNotes];
   if (event.created) {
     notes.push("This push created the ref.");
   }
@@ -255,6 +281,9 @@ function eventNotes(event: NormalizedPushEvent): string[] {
     notes.push(
       "GitHub caps push payloads at 2048 commits; this summary may not include every commit.",
     );
+  }
+  if (enrichment.fileCountCapped) {
+    notes.push("GitHub may cap changed file details for very large comparisons.");
   }
 
   return notes;
@@ -327,30 +356,34 @@ function formatCommit(commit: NormalizedCommit): string {
   return `${linkedSha} ${truncate(shortMessage, 140)}`;
 }
 
-function capPayloads(payloads: DiscordWebhookPayload[]): DiscordWebhookPayload[] {
-  if (payloads.length <= MAX_PAYLOADS) {
+function capPayloads(
+  payloads: DiscordWebhookPayload[],
+  maxPayloads: number,
+): DiscordWebhookPayload[] {
+  if (payloads.length <= maxPayloads) {
     return payloads;
   }
 
-  const capped = payloads.slice(0, MAX_PAYLOADS);
+  const capped = payloads.slice(0, maxPayloads);
   const lastEmbed = capped.at(-1)?.embeds[0];
   if (lastEmbed) {
-    appendFooterNote(lastEmbed, `Output truncated to ${MAX_PAYLOADS} messages.`);
+    appendFooterNote(lastEmbed, `Output truncated to ${maxPayloads} messages.`);
+    const normalized = finalizeEmbed(lastEmbed);
+    const lastPayload = capped.at(-1);
+    if (lastPayload) {
+      lastPayload.embeds = [normalized];
+    }
   }
 
   return capped;
 }
 
-function lineSummary(changes: AggregatedChanges): string {
-  if (
-    typeof changes.additions !== "number" ||
-    typeof changes.deletions !== "number" ||
-    typeof changes.total !== "number"
-  ) {
+function lineSummary(stats: PushEnrichment["stats"]): string {
+  if (!stats) {
     return "Unavailable";
   }
 
-  return `+${changes.additions} / -${changes.deletions} (${changes.total})`;
+  return `+${stats.additions} / -${stats.deletions} (${stats.total})`;
 }
 
 function totalFileCount(changes: Required<CommitFileGroups>): number {
@@ -374,13 +407,21 @@ function commitCountLabel(event: NormalizedPushEvent): string {
 
 function titleForPush(event: NormalizedPushEvent): string {
   if (event.created) {
-    return `GitHub ${event.refType} created`;
-  }
-  if (event.forced) {
-    return "GitHub force push delivered";
+    return event.refType === "tag" ? "Tag published" : "Branch created";
   }
 
-  return "GitHub push delivered";
+  return "Push delivered";
+}
+
+function titleForDeletion(event: NormalizedPushEvent): string {
+  if (event.refType === "tag") {
+    return "Tag deleted";
+  }
+  if (event.refType === "branch") {
+    return "Branch deleted";
+  }
+
+  return "Ref deleted";
 }
 
 function eventVerb(event: NormalizedPushEvent): string {
@@ -405,6 +446,27 @@ function embedColor(config: ActionConfig, language: LanguageInfo): number {
 
 function commitFileNames(commit: NormalizedCommit): string[] {
   return [...commit.added, ...commit.modified, ...(commit.renamed || []), ...commit.removed];
+}
+
+function fileCountLabel(enrichment: PushEnrichment): string {
+  return enrichment.fileCountCapped ? `${enrichment.fileCount}+` : String(enrichment.fileCount);
+}
+
+function finalizeEmbed(embed: APIEmbed): APIEmbed {
+  let result = normalizeEmbedWithMetadata(embed);
+  if (result.droppedFields > 0 || result.truncated) {
+    const parts: string[] = [];
+    if (result.droppedFields > 0) {
+      parts.push(`${result.droppedFields} field${result.droppedFields === 1 ? "" : "s"} omitted`);
+    }
+    if (result.truncated) {
+      parts.push("text shortened");
+    }
+    appendFooterNote(result.embed, parts.join("; "));
+    result = normalizeEmbedWithMetadata(result.embed);
+  }
+
+  return result.embed;
 }
 
 function markdownLink(label: string, url: string): string {

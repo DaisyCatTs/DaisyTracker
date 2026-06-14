@@ -18,6 +18,10 @@ describe("language detection", () => {
     expect(detectLanguage("terraform/main.tf")?.name).toBe("Terraform");
     expect(detectLanguage("mix.exs")?.name).toBe("Elixir");
     expect(detectLanguage("flake.nix")?.name).toBe("Nix");
+    expect(detectLanguage(".github/workflows/ci.yml")?.name).toBe("YAML");
+    expect(detectLanguage("package.json")?.name).toBe("JavaScript");
+    expect(detectLanguage("src/App.tsx")?.name).toBe("TypeScript");
+    expect(detectLanguage("src/data.json")?.name).toBe("JSON");
   });
 
   test("chooses the most common changed language", () => {
@@ -41,5 +45,13 @@ describe("language detection", () => {
     const referencedIcons = [...new Set(iconNames)].sort();
 
     expect(referencedIcons).toEqual(assetNames);
+  });
+
+  test("uses color fallback without broken icons for unsupported icon assets", () => {
+    const language = detectLanguage("infra/main.tf");
+
+    expect(language?.name).toBe("Terraform");
+    expect(language?.color).toBe(0x844fba);
+    expect(language ? languageIconUrl(language) : undefined).toBeUndefined();
   });
 });

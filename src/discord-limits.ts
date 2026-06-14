@@ -1,4 +1,5 @@
 import type { APIEmbed, APIEmbedField } from "discord-api-types/v10";
+import { DaisyTrackerError } from "./errors";
 import type { DiscordWebhookPayload } from "./types";
 
 export const DISCORD_LIMITS = {
@@ -15,30 +16,56 @@ export const DISCORD_LIMITS = {
   username: 80,
 };
 
+export interface NormalizedEmbedResult {
+  droppedFields: number;
+  embed: APIEmbed;
+  truncated: boolean;
+}
+
 export function validateDiscordWebhookPayload(payload: DiscordWebhookPayload): void {
   if (payload.username && payload.username.length > DISCORD_LIMITS.username) {
-    throw new Error(`Discord webhook username exceeds ${DISCORD_LIMITS.username} characters.`);
+    throw new DaisyTrackerError(
+      `Discord webhook username exceeds ${DISCORD_LIMITS.username} characters.`,
+      { kind: "internal" },
+    );
   }
 
   if (!payload.embeds.length) {
-    throw new Error("Discord webhook payload must contain at least one embed.");
+    throw new DaisyTrackerError("Discord webhook payload must contain at least one embed.", {
+      kind: "internal",
+    });
   }
 
   if (payload.embeds.length > DISCORD_LIMITS.embeds) {
-    throw new Error(`Discord webhook payload exceeds ${DISCORD_LIMITS.embeds} embeds.`);
+    throw new DaisyTrackerError(
+      `Discord webhook payload exceeds ${DISCORD_LIMITS.embeds} embeds.`,
+      {
+        kind: "internal",
+      },
+    );
   }
 
   const total = payload.embeds.reduce((sum, embed) => sum + validateEmbed(embed), 0);
   if (total > DISCORD_LIMITS.embedText) {
-    throw new Error(`Discord webhook embed text exceeds ${DISCORD_LIMITS.embedText} characters.`);
+    throw new DaisyTrackerError(
+      `Discord webhook embed text exceeds ${DISCORD_LIMITS.embedText} characters.`,
+      { kind: "internal" },
+    );
   }
 }
 
 export function normalizeEmbed(embed: APIEmbed): APIEmbed {
+  return normalizeEmbedWithMetadata(embed).embed;
+}
+
+export function normalizeEmbedWithMetadata(embed: APIEmbed): NormalizedEmbedResult {
+  let truncated = false;
+  let droppedFields = Math.max(0, (embed.fields || []).length - DISCORD_LIMITS.fields);
+
   const fields = (embed.fields || []).slice(0, DISCORD_LIMITS.fields).map((field) => ({
     inline: Boolean(field.inline),
-    name: truncate(field.name || "Field", DISCORD_LIMITS.fieldName),
-    value: truncate(field.value || "_No content_", DISCORD_LIMITS.fieldValue),
+    name: truncateWithMetadata(field.name || "Field", DISCORD_LIMITS.fieldName),
+    value: truncateWithMetadata(field.value || "_No content_", DISCORD_LIMITS.fieldValue),
   }));
 
   const normalized: APIEmbed = {
@@ -46,28 +73,29 @@ export function normalizeEmbed(embed: APIEmbed): APIEmbed {
     author: embed.author?.name
       ? {
           ...embed.author,
-          name: truncate(embed.author.name, DISCORD_LIMITS.authorName),
+          name: truncateWithMetadata(embed.author.name, DISCORD_LIMITS.authorName),
         }
       : embed.author,
     description: embed.description
-      ? truncate(embed.description, DISCORD_LIMITS.description)
+      ? truncateWithMetadata(embed.description, DISCORD_LIMITS.description)
       : undefined,
     fields,
     footer: embed.footer?.text
       ? {
           ...embed.footer,
-          text: truncate(embed.footer.text, DISCORD_LIMITS.footerText),
+          text: truncateWithMetadata(embed.footer.text, DISCORD_LIMITS.footerText),
         }
       : embed.footer,
-    title: embed.title ? truncate(embed.title, DISCORD_LIMITS.title) : undefined,
+    title: embed.title ? truncateWithMetadata(embed.title, DISCORD_LIMITS.title) : undefined,
   };
 
   while (embedTextLength(normalized) > DISCORD_LIMITS.embedText && normalized.fields?.length) {
     normalized.fields.pop();
+    droppedFields += 1;
   }
 
   if (embedTextLength(normalized) > DISCORD_LIMITS.embedText && normalized.description) {
-    normalized.description = truncate(
+    normalized.description = truncateWithMetadata(
       normalized.description,
       Math.max(
         0,
@@ -76,7 +104,15 @@ export function normalizeEmbed(embed: APIEmbed): APIEmbed {
     );
   }
 
-  return normalized;
+  return { droppedFields, embed: normalized, truncated };
+
+  function truncateWithMetadata(value: string, limit: number): string {
+    if (value.length > limit) {
+      truncated = true;
+    }
+
+    return truncate(value, limit);
+  }
 }
 
 export function canAddField(embed: APIEmbed, field: APIEmbedField): boolean {
@@ -119,30 +155,51 @@ export function truncate(value: string, limit: number): string {
 
 function validateEmbed(embed: APIEmbed): number {
   if (embed.title && embed.title.length > DISCORD_LIMITS.title) {
-    throw new Error(`Discord embed title exceeds ${DISCORD_LIMITS.title} characters.`);
+    throw new DaisyTrackerError(`Discord embed title exceeds ${DISCORD_LIMITS.title} characters.`, {
+      kind: "internal",
+    });
   }
   if (embed.description && embed.description.length > DISCORD_LIMITS.description) {
-    throw new Error(`Discord embed description exceeds ${DISCORD_LIMITS.description} characters.`);
+    throw new DaisyTrackerError(
+      `Discord embed description exceeds ${DISCORD_LIMITS.description} characters.`,
+      { kind: "internal" },
+    );
   }
   if (embed.author?.name && embed.author.name.length > DISCORD_LIMITS.authorName) {
-    throw new Error(`Discord embed author exceeds ${DISCORD_LIMITS.authorName} characters.`);
+    throw new DaisyTrackerError(
+      `Discord embed author exceeds ${DISCORD_LIMITS.authorName} characters.`,
+      { kind: "internal" },
+    );
   }
   if (embed.footer?.text && embed.footer.text.length > DISCORD_LIMITS.footerText) {
-    throw new Error(`Discord embed footer exceeds ${DISCORD_LIMITS.footerText} characters.`);
+    throw new DaisyTrackerError(
+      `Discord embed footer exceeds ${DISCORD_LIMITS.footerText} characters.`,
+      { kind: "internal" },
+    );
   }
   if ((embed.fields || []).length > DISCORD_LIMITS.fields) {
-    throw new Error(`Discord embed exceeds ${DISCORD_LIMITS.fields} fields.`);
+    throw new DaisyTrackerError(`Discord embed exceeds ${DISCORD_LIMITS.fields} fields.`, {
+      kind: "internal",
+    });
   }
 
   for (const field of embed.fields || []) {
     if (!field.name || !field.value) {
-      throw new Error("Discord embed fields must include non-empty name and value.");
+      throw new DaisyTrackerError("Discord embed fields must include non-empty name and value.", {
+        kind: "internal",
+      });
     }
     if (field.name.length > DISCORD_LIMITS.fieldName) {
-      throw new Error(`Discord embed field name exceeds ${DISCORD_LIMITS.fieldName} characters.`);
+      throw new DaisyTrackerError(
+        `Discord embed field name exceeds ${DISCORD_LIMITS.fieldName} characters.`,
+        { kind: "internal" },
+      );
     }
     if (field.value.length > DISCORD_LIMITS.fieldValue) {
-      throw new Error(`Discord embed field value exceeds ${DISCORD_LIMITS.fieldValue} characters.`);
+      throw new DaisyTrackerError(
+        `Discord embed field value exceeds ${DISCORD_LIMITS.fieldValue} characters.`,
+        { kind: "internal" },
+      );
     }
   }
 

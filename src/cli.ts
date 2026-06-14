@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { buildPushPayloads } from "./embed";
 import { normalizePushPayload } from "./github-event";
-import { fetchCommitDetails } from "./github-api";
+import { fetchPushEnrichment } from "./github-api";
 import { readActionConfig } from "./action";
 
 const fixturePath =
@@ -15,9 +15,9 @@ const config = readActionConfig({
   ...process.env,
   INPUT_DEPENDENCY_UPDATES: process.env.INPUT_DEPENDENCY_UPDATES || "full",
 });
-const details = await fetchCommitDetails(event, {
+const enrichment = await fetchPushEnrichment(event, {
   maxCommits: config.maxCommits,
   token: config.githubToken,
 });
 
-console.log(JSON.stringify(buildPushPayloads(event, details, config), null, 2));
+console.log(JSON.stringify(buildPushPayloads(event, enrichment, config), null, 2));

@@ -7,6 +7,7 @@ describe("Action config", () => {
       INPUT_AVATAR_URL: "https://example.com/avatar.png",
       INPUT_COLOR: "#ff00aa",
       INPUT_FAIL_ON_ERROR: "false",
+      INPUT_MAX_MESSAGES: "7",
       INPUT_SUPPRESS_MENTIONS: "false",
       INPUT_THREAD_ID: "123",
       INPUT_THREAD_NAME: "deploys",
@@ -16,6 +17,7 @@ describe("Action config", () => {
     expect(config.avatarUrl).toBe("https://example.com/avatar.png");
     expect(config.color).toBe(0xff00aa);
     expect(config.failOnError).toBe(false);
+    expect(config.maxMessages).toBe(7);
     expect(config.suppressMentions).toBe(false);
     expect(config.threadId).toBe("123");
     expect(config.threadName).toBe("deploys");
@@ -43,5 +45,10 @@ describe("Action config", () => {
         INPUT_DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/123/token",
       }),
     ).toBe("https://discord.com/api/webhooks/123/token");
+  });
+
+  test("clamps max-messages to the supported Discord message range", () => {
+    expect(readActionConfig({ INPUT_MAX_MESSAGES: "0" }).maxMessages).toBe(1);
+    expect(readActionConfig({ INPUT_MAX_MESSAGES: "50" }).maxMessages).toBe(10);
   });
 });

@@ -14,6 +14,7 @@ export interface ActionConfig {
   ignoredBranches: string[];
   maxCommits: number;
   maxFilesPerSection: number;
+  maxMessages: number;
   sendOnEvents: string[];
   suppressMentions: boolean;
   threadId: string;
@@ -88,6 +89,15 @@ export interface CommitStats {
 
 export interface CommitDetails extends CommitFileGroups {
   id: string;
+  stats?: CommitStats;
+}
+
+export interface PushEnrichment {
+  commitDetails: CommitDetails[];
+  enrichmentNotes: string[];
+  fileCount: number;
+  fileCountCapped: boolean;
+  fileGroups: Required<CommitFileGroups>;
   stats?: CommitStats;
 }
 

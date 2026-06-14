@@ -18,6 +18,7 @@ export function readActionConfig(env: Env = process.env): ActionConfig {
     ignoredBranches: parseCsv(getInput("ignored-branches", env), DEFAULT_IGNORED_BRANCHES),
     maxCommits: parsePositiveInteger(getInput("max-commits", env), 10, 1, 50),
     maxFilesPerSection: parsePositiveInteger(getInput("max-files-per-section", env), 10, 0, 50),
+    maxMessages: parsePositiveInteger(getInput("max-messages", env), 5, 1, 10),
     sendOnEvents: parseCsv(getInput("send-on-events", env), ["push"]).map((event) =>
       event.toLowerCase(),
     ),

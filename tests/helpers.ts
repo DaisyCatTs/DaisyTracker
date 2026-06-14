@@ -26,6 +26,7 @@ export function defaultConfig(overrides: Partial<ActionConfig> = {}): ActionConf
     ignoredBranches: ["renovate/**", "dependabot/**"],
     maxCommits: 10,
     maxFilesPerSection: 10,
+    maxMessages: 5,
     sendOnEvents: ["push"],
     suppressMentions: true,
     threadId: "",

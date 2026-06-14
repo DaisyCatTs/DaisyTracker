@@ -1,11 +1,12 @@
 import { readActionConfig, shouldFailOnError } from "./config";
 import { sendDiscordPayloads } from "./discord";
 import { buildCompactDependencyPayload, buildPushPayloads, buildRefDeletedPayload } from "./embed";
+import { DaisyTrackerError, shouldWarnOnly } from "./errors";
 import { shouldSkipDependencyUpdate } from "./filter";
 import { loadGitHubEvent } from "./github-event";
-import { fetchCommitDetails } from "./github-api";
+import { fetchPushEnrichment } from "./github-api";
 import { error as logError, info, mask, warn } from "./log";
-import type { NormalizedEvent, NormalizedPushEvent } from "./types";
+import type { ActionConfig, NormalizedEvent, NormalizedPushEvent } from "./types";
 
 type Env = NodeJS.ProcessEnv;
 
@@ -15,8 +16,9 @@ export async function run(
   env: Env = process.env,
   fetchImpl: typeof fetch = globalThis.fetch,
 ): Promise<void> {
+  let config: ActionConfig | undefined;
   try {
-    const config = readActionConfig(env);
+    config = readActionConfig(env);
     const eventName = env.GITHUB_EVENT_NAME || "push";
     const normalizedEventName = eventName.toLowerCase();
 
@@ -31,8 +33,9 @@ export async function run(
     }
 
     if (!config.discordWebhookUrl) {
-      throw new Error(
+      throw new DaisyTrackerError(
         "Missing Discord webhook URL. Set the discord-webhook-url input or DISCORD_WEBHOOK_URL.",
+        { kind: "configuration" },
       );
     }
 
@@ -63,6 +66,7 @@ export async function run(
         [buildCompactDependencyPayload(event, config, dependencyDecision.reason)],
         {
           fetch: fetchImpl,
+          redactValues: [config.githubToken],
           threadId: config.threadId,
         },
       );
@@ -73,26 +77,29 @@ export async function run(
     if (event.deleted) {
       await sendDiscordPayloads(config.discordWebhookUrl, [buildRefDeletedPayload(event, config)], {
         fetch: fetchImpl,
+        redactValues: [config.githubToken],
         threadId: config.threadId,
       });
       info("DaisyTracker sent a deleted ref summary.");
       return;
     }
 
-    const details = await fetchCommitDetails(event, {
+    const enrichment = await fetchPushEnrichment(event, {
       fetch: fetchImpl,
       maxCommits: config.maxCommits,
       token: config.githubToken,
     });
-    const payloads = buildPushPayloads(event, details, config);
+    const payloads = buildPushPayloads(event, enrichment, config);
 
     await sendDiscordPayloads(config.discordWebhookUrl, payloads, {
       fetch: fetchImpl,
+      redactValues: [config.githubToken],
       threadId: config.threadId,
     });
     info(`DaisyTracker sent ${payloads.length} Discord webhook payload(s).`);
   } catch (error) {
-    if (shouldFailOnError(env)) {
+    const failOnError = config?.failOnError ?? shouldFailOnError(env);
+    if (failOnError || !shouldWarnOnly(error)) {
       setFailed(error);
     } else {
       warn(error instanceof Error ? error.message : String(error));

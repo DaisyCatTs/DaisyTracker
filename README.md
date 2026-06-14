@@ -48,7 +48,40 @@ DaisyTracker sends a compact Discord dashboard for push events:
 Discord limits are enforced before sending, including field length, field count, and
 the 6000 character total embed limit.
 
-## Language Support
+## Release Scope
+
+DaisyTracker v2 is intentionally focused on push notifications. Pull request, release,
+star, and issue notifications are out of scope for v2 so the push path can stay fast,
+predictable, and easy to trust. Unsupported events are skipped successfully.
+
+## Example Output
+
+Local preview renders the same JSON payload shape that the Action sends to Discord:
+
+```json
+[
+  {
+    "allowed_mentions": { "parse": [] },
+    "embeds": [
+      {
+        "title": "Push delivered",
+        "description": "**1** commit landed in DaisyCatTs/DaisyTracker on `branch:master`.",
+        "fields": [
+          { "name": "Repository", "value": "DaisyCatTs/DaisyTracker", "inline": true },
+          { "name": "Ref", "value": "`branch:master`", "inline": true },
+          { "name": "Commits", "value": "1", "inline": true },
+          { "name": "Files", "value": "3", "inline": true },
+          { "name": "Lines", "value": "+120 / -20 (140)", "inline": true },
+          { "name": "Language", "value": "TypeScript", "inline": true }
+        ]
+      }
+    ],
+    "username": "DaisyTracker"
+  }
+]
+```
+
+## Language Detection And Icons
 
 DaisyTracker detects the dominant changed language from GitHub Linguist-style file
 extensions and common filenames. Supported detection includes TypeScript, JavaScript,
@@ -60,6 +93,10 @@ The embed color follows the detected language when `color` is `auto`. Local PNG 
 are included for the languages that have curated assets in `assets/languages`. If a
 detected language does not have a curated icon, DaisyTracker still uses the language
 color and falls back to the repository avatar instead of sending a broken image.
+
+Language data is generated from the vendored GitHub Linguist language map. The curated
+icon list is intentionally smaller than the detection list, and new icon files should
+document their source and license before release.
 
 ## Dependency Update Noise
 
@@ -120,7 +157,8 @@ if: github.actor != 'dependabot[bot]' && github.actor != 'renovate[bot]'
 | `ignored-actors` | `dependabot[bot],renovate[bot],github-actions[bot]` | Comma-separated bot actors to suppress. |
 | `ignored-branches` | `renovate/**,dependabot/**` | Comma-separated branch globs to suppress. |
 | `max-commits` | `10` | Maximum recent commits shown. |
-| `max-files-per-section` | `10` | Maximum files shown in each added, modified, and removed section. |
+| `max-files-per-section` | `10` | Maximum files shown in each added, modified, renamed, and removed section. |
+| `max-messages` | `5` | Maximum Discord webhook messages sent for one push before truncating output. |
 | `send-on-events` | `push` | Comma-separated event names. Only `push` is currently sent. |
 
 ## Optional Line Stats
@@ -158,7 +196,7 @@ Create a thread in a forum or media channel webhook:
 ## Failure Policy
 
 By default, webhook delivery errors fail the workflow after retries. For repositories
-where Discord notifications should never block CI, set:
+where Discord notification delivery should never block CI, set:
 
 ```yaml
 - uses: DaisyCatTs/DaisyTracker@v2
@@ -167,12 +205,17 @@ where Discord notifications should never block CI, set:
     fail-on-error: false
 ```
 
+Configuration and internal payload errors always fail, even when `fail-on-error` is
+`false`. That includes a missing or invalid webhook URL, unreadable GitHub event JSON,
+and rendered payloads that fail Discord limit validation.
+
 ## Local Development
 
 This repo uses TypeScript and Bun.
 
 ```bash
 bun install
+bun run languages:check
 bun run check
 bun run build
 ```
